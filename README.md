@@ -1,4 +1,4 @@
-local OrbsUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Front-Evill/Gui/refs/heads/main/main.luau"))()
+local OrbsUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Front-Evill/Gui/refs/heads/main/main.lua"))()
 
 local Window = OrbsUI.new({
     Title       = "Orbs",
