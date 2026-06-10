@@ -5,7 +5,7 @@ A clean, modern Roblox GUI library with full theme support.
 ## Quick Start
 
 ```lua
-local OrbsUI = loadstring(game:HttpGet("RAW_GITHUB_URL"))()
+local OrbsUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Front-Evill/Gui/refs/heads/main/main.luau"))()
 
 local Window = OrbsUI.new({
     Title = "Orbs",
