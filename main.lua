@@ -42,28 +42,37 @@ local ICO = {
 }
 
 local TH_MAP = {
-	Purple={A=Color3.fromRGB(128,82,232),  AL=Color3.fromRGB(182,148,255), AD=Color3.fromRGB(82,52,168)},
-	Red   ={A=Color3.fromRGB(222,62,62),   AL=Color3.fromRGB(255,128,128), AD=Color3.fromRGB(162,38,38)},
-	Cyan  ={A=Color3.fromRGB(32,182,222),  AL=Color3.fromRGB(108,222,255), AD=Color3.fromRGB(20,132,172)},
-	Green ={A=Color3.fromRGB(42,182,102),  AL=Color3.fromRGB(108,222,158), AD=Color3.fromRGB(26,132,70)},
-	Gold  ={A=Color3.fromRGB(212,162,30),  AL=Color3.fromRGB(255,212,82),  AD=Color3.fromRGB(162,120,18)},
-	Orange={A=Color3.fromRGB(222,112,30),  AL=Color3.fromRGB(255,162,82),  AD=Color3.fromRGB(162,80,18)},
-	Pink  ={A=Color3.fromRGB(202,52,162),  AL=Color3.fromRGB(255,108,212), AD=Color3.fromRGB(152,30,120)},
-	White ={A=Color3.fromRGB(202,202,212), AL=Color3.fromRGB(242,242,255), AD=Color3.fromRGB(162,162,175)},
+	Purple={A=Color3.fromRGB(120,76,220),  AL=Color3.fromRGB(178,144,255), AD=Color3.fromRGB(76,48,160)},
+	Red   ={A=Color3.fromRGB(215,58,58),   AL=Color3.fromRGB(255,120,120), AD=Color3.fromRGB(155,34,34)},
+	Cyan  ={A=Color3.fromRGB(28,175,215),  AL=Color3.fromRGB(100,218,255), AD=Color3.fromRGB(18,126,165)},
+	Green ={A=Color3.fromRGB(38,175,96),   AL=Color3.fromRGB(100,218,152), AD=Color3.fromRGB(22,126,66)},
+	Gold  ={A=Color3.fromRGB(205,156,26),  AL=Color3.fromRGB(255,208,78),  AD=Color3.fromRGB(155,114,14)},
+	Orange={A=Color3.fromRGB(215,106,26),  AL=Color3.fromRGB(255,158,78),  AD=Color3.fromRGB(155,74,14)},
+	Pink  ={A=Color3.fromRGB(195,46,156),  AL=Color3.fromRGB(255,100,208), AD=Color3.fromRGB(145,24,114)},
+	White ={A=Color3.fromRGB(195,195,205), AL=Color3.fromRGB(238,238,252), AD=Color3.fromRGB(155,155,168)},
 }
-
-local ALPHA    = 0.26
-local BG_ALPHA = 0.27
 
 local B = {
-	BG=Color3.fromRGB(13,13,20),    S1=Color3.fromRGB(19,19,30),
-	S2=Color3.fromRGB(25,25,39),    S3=Color3.fromRGB(31,31,48),
-	S4=Color3.fromRGB(37,37,56),    BD=Color3.fromRGB(46,46,70),
-	TX=Color3.fromRGB(224,216,255), TS=Color3.fromRGB(132,120,182),
-	TD=Color3.fromRGB(72,65,112),   W=Color3.fromRGB(255,255,255),
-	CG=Color3.fromRGB(40,202,72),   CR=Color3.fromRGB(232,65,65),
-	CW=Color3.fromRGB(238,160,28),  TDesc=Color3.fromRGB(90,88,105),
+	BG=Color3.fromRGB(10,10,16),
+	S1=Color3.fromRGB(16,16,26),
+	S2=Color3.fromRGB(22,22,35),
+	S3=Color3.fromRGB(28,28,44),
+	S4=Color3.fromRGB(34,34,52),
+	BD=Color3.fromRGB(42,42,65),
+	TX=Color3.fromRGB(225,218,255),
+	TS=Color3.fromRGB(125,114,175),
+	TD=Color3.fromRGB(65,58,105),
+	W=Color3.fromRGB(255,255,255),
+	CG=Color3.fromRGB(38,198,68),
+	CR=Color3.fromRGB(228,60,60),
+	CW=Color3.fromRGB(235,155,24),
+	TDesc=Color3.fromRGB(80,76,98),
 }
+
+local MIN_W = 460
+local MIN_H = 320
+local MAX_W = 860
+local MAX_H = 680
 
 local function lc(a,b,t)
 	return Color3.new(a.R+(b.R-a.R)*t, a.G+(b.G-a.G)*t, a.B+(b.B-a.B)*t)
@@ -121,10 +130,10 @@ local function hl(f,sp,ha,va)
 	return l
 end
 
-local function frS(p,bg)
+local function frS(p,bg,tr)
 	local f=Instance.new("Frame")
 	f.BackgroundColor3=bg or B.BG
-	f.BackgroundTransparency=0
+	f.BackgroundTransparency=tr or 0
 	f.BorderSizePixel=0
 	f.Parent=p
 	return f
@@ -179,7 +188,7 @@ local function fmtT(s)
 	return string.format("%02d:%02d",m,sc)
 end
 
-local function drag(win,handle)
+local function makeDrag(win,handle)
 	local d,ds,sp=false,nil,nil
 	handle.InputBegan:Connect(function(i)
 		if i.UserInputType==Enum.UserInputType.MouseButton1
@@ -201,6 +210,40 @@ local function drag(win,handle)
 			or i.UserInputType==Enum.UserInputType.Touch then
 			d=false
 		end
+	end)
+end
+
+local function makeResize(win,handle,onResize)
+	local r,rs,rp=false,nil,nil
+	handle.InputBegan:Connect(function(i)
+		if i.UserInputType==Enum.UserInputType.MouseButton1
+			or i.UserInputType==Enum.UserInputType.Touch then
+			r=true
+			rs=i.Position
+			rp=Vector2.new(win.AbsoluteSize.X,win.AbsoluteSize.Y)
+		end
+	end)
+	UIS.InputChanged:Connect(function(i)
+		if r and (i.UserInputType==Enum.UserInputType.MouseMovement
+			or i.UserInputType==Enum.UserInputType.Touch) then
+			local dv=i.Position-rs
+			local nw=math.clamp(rp.X+dv.X,MIN_W,MAX_W)
+			local nh=math.clamp(rp.Y+dv.Y,MIN_H,MAX_H)
+			win.Size=UDim2.fromOffset(nw,nh)
+			if onResize then onResize(nw,nh) end
+		end
+	end)
+	UIS.InputEnded:Connect(function(i)
+		if i.UserInputType==Enum.UserInputType.MouseButton1
+			or i.UserInputType==Enum.UserInputType.Touch then
+			r=false
+		end
+	end)
+	handle.MouseEnter:Connect(function()
+		tw(handle,.12,{BackgroundTransparency=.4})
+	end)
+	handle.MouseLeave:Connect(function()
+		if not r then tw(handle,.12,{BackgroundTransparency=.82}) end
 	end)
 end
 
@@ -246,29 +289,25 @@ function OrbsUI:_build()
 	nhl.HorizontalAlignment=Enum.HorizontalAlignment.Right
 	pd(NH,0,14,0,0)
 
-	local W      = 580
-	local TB_H   = 46
-	local TAB_H  = 38
-	local D_H    = 1
-	local SB_H   = 26
-	local PC_W   = 120
-	local BODY_H = 300
-	local H = TB_H + D_H + TAB_H + D_H + BODY_H + SB_H
+	local DEF_W  = 620
+	local DEF_H  = 440
+	local TB_H   = 44
+	local TAB_H  = 36
+	local SB_H   = 24
 
 	local Win=frT(Gui)
-	Win.Size=UDim2.fromOffset(W,H)
+	Win.Size=UDim2.fromOffset(DEF_W,DEF_H)
 	Win.Position=UDim2.fromScale(.5,.5)
 	Win.AnchorPoint=Vector2.new(.5,.5)
 	Win.ZIndex=10
 	Win.ClipsDescendants=true
-	cr(Win,12)
+	cr(Win,10)
 
-	local WinBg=frS(Win,B.BG)
-	WinBg.BackgroundTransparency=ALPHA
+	local WinBg=frS(Win,B.BG,.18)
 	WinBg.Size=UDim2.fromScale(1,1)
 	WinBg.ZIndex=10
-	cr(WinBg,12)
-	local winSK=sk(WinBg,lc(TH.A,B.BD,.55),1.5,.25)
+	cr(WinBg,10)
+	local winSK=sk(WinBg,lc(TH.A,B.BD,.5),1.5,.2)
 
 	if self.BgId~="" then
 		local BgImg=Instance.new("ImageLabel")
@@ -276,51 +315,47 @@ function OrbsUI:_build()
 		BgImg.BackgroundTransparency=1
 		BgImg.Image=self.BgId
 		BgImg.ScaleType=Enum.ScaleType.Crop
-		BgImg.ImageTransparency=BG_ALPHA
+		BgImg.ImageTransparency=0.82
 		BgImg.ZIndex=10
 		BgImg.Parent=WinBg
-		cr(BgImg,12)
+		cr(BgImg,10)
 	end
 
 	local TopBar=frT(Win)
-	TopBar.Size=UDim2.fromOffset(W,TB_H)
+	TopBar.Size=UDim2.new(1,0,0,TB_H)
 	TopBar.Position=UDim2.fromOffset(0,0)
 	TopBar.ZIndex=20
 
-	local TopBgCol=lc(TH.A,B.BG,.86)
-	local TopBg=frS(TopBar,TopBgCol)
-	TopBg.BackgroundTransparency=ALPHA
+	local TopBg=frS(TopBar,lc(TH.A,B.S1,.92),.14)
 	TopBg.Size=UDim2.fromScale(1,1)
 	TopBg.ZIndex=20
-	cr(TopBg,12)
+	cr(TopBg,10)
 
-	local TopBgFix=frS(TopBar,TopBgCol)
-	TopBgFix.BackgroundTransparency=ALPHA
-	TopBgFix.Size=UDim2.new(1,0,0,14)
-	TopBgFix.Position=UDim2.new(0,0,1,-14)
+	local TopBgFix=frS(TopBar,lc(TH.A,B.S1,.92),.14)
+	TopBgFix.Size=UDim2.new(1,0,0,12)
+	TopBgFix.Position=UDim2.new(0,0,1,-12)
 	TopBgFix.ZIndex=21
 
-	local TopLineInner=frS(Win,lc(TH.A,B.BD,.6))
-	TopLineInner.BackgroundTransparency=.38
-	TopLineInner.Size=UDim2.fromOffset(W,D_H)
-	TopLineInner.Position=UDim2.fromOffset(0,TB_H)
-	TopLineInner.ZIndex=22
+	local TopLine=frS(Win,lc(TH.A,B.BD,.55),.35)
+	TopLine.Size=UDim2.new(1,0,0,1)
+	TopLine.Position=UDim2.fromOffset(0,TB_H)
+	TopLine.ZIndex=22
 
 	local DotsF=frT(TopBar)
-	DotsF.Size=UDim2.fromOffset(58,13)
-	DotsF.Position=UDim2.new(0,14,0.5,-6.5)
+	DotsF.Size=UDim2.fromOffset(52,12)
+	DotsF.Position=UDim2.new(0,14,0.5,-6)
 	DotsF.ZIndex=22
 	hl(DotsF,6)
 
 	local function wBtn(col)
 		local b=Instance.new("TextButton")
-		b.Size=UDim2.fromOffset(13,13)
+		b.Size=UDim2.fromOffset(12,12)
 		b.BackgroundColor3=col
 		b.Text=""
 		b.BorderSizePixel=0
 		b.ZIndex=23
 		b.Parent=DotsF
-		cr(b,7)
+		cr(b,6)
 		return b
 	end
 
@@ -329,166 +364,132 @@ function OrbsUI:_build()
 	wBtn(Color3.fromRGB(40,200,64))
 
 	local TitleRow=frT(TopBar)
-	TitleRow.Size=UDim2.new(0,280,1,0)
-	TitleRow.Position=UDim2.new(1,-292,0,0)
+	TitleRow.Size=UDim2.new(1,-80,1,0)
+	TitleRow.Position=UDim2.new(0,0,0,0)
 	TitleRow.ZIndex=22
-	hl(TitleRow,6,Enum.HorizontalAlignment.Right,Enum.VerticalAlignment.Center)
+	hl(TitleRow,0,Enum.HorizontalAlignment.Center,Enum.VerticalAlignment.Center)
 
-	local DescL=lb(TitleRow,self.Desc,10,Enum.Font.Gotham,B.TDesc,Enum.TextXAlignment.Right)
+	local TitleInner=frT(TitleRow)
+	TitleInner.Size=UDim2.new(0,0,1,0)
+	TitleInner.AutomaticSize=Enum.AutomaticSize.X
+	hl(TitleInner,6,Enum.HorizontalAlignment.Center,Enum.VerticalAlignment.Center)
+
+	local TitleL=lb(TitleInner,self.Title,15,Enum.Font.GothamBold,TH.AL)
+	TitleL.Size=UDim2.new(0,0,0,20)
+	TitleL.AutomaticSize=Enum.AutomaticSize.X
+	TitleL.ZIndex=23
+
+	local DescL=lb(TitleInner,self.Desc,10,Enum.Font.Gotham,B.TDesc)
 	DescL.Size=UDim2.new(0,0,0,13)
 	DescL.AutomaticSize=Enum.AutomaticSize.X
 	DescL.ZIndex=23
-
-	local TitleL=lb(TitleRow,self.Title,14,Enum.Font.GothamBold,TH.AL,Enum.TextXAlignment.Right)
-	TitleL.Size=UDim2.new(0,0,0,18)
-	TitleL.AutomaticSize=Enum.AutomaticSize.X
-	TitleL.ZIndex=23
 
 	local IconImg=nil
 	if self.IconId~="" then
 		IconImg=Instance.new("ImageLabel")
 		IconImg.BackgroundTransparency=1
-		IconImg.Size=UDim2.fromOffset(22,22)
+		IconImg.Size=UDim2.fromOffset(20,20)
 		IconImg.Image=self.IconId
 		IconImg.ImageColor3=TH.AL
 		IconImg.ScaleType=Enum.ScaleType.Fit
 		IconImg.ZIndex=23
-		IconImg.Parent=TitleRow
+		IconImg.Parent=TitleInner
+		IconImg.LayoutOrder=0
+		TitleL.LayoutOrder=1
+		DescL.LayoutOrder=2
 	end
 
-	local TabY = TB_H + D_H
+	local TabBarY = TB_H + 1
 
-	local TabOuter=frT(Win)
-	TabOuter.Size=UDim2.fromOffset(W-24,TAB_H)
-	TabOuter.Position=UDim2.fromOffset(12,TabY)
+	local TabOuter=frS(Win,B.S1,.08)
+	TabOuter.Size=UDim2.new(1,0,0,TAB_H)
+	TabOuter.Position=UDim2.fromOffset(0,TabBarY)
 	TabOuter.ClipsDescendants=true
 	TabOuter.ZIndex=20
 
 	local TBF=frT(TabOuter)
 	TBF.Size=UDim2.fromScale(1,1)
 	TBF.ZIndex=20
-	hl(TBF,5,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Center)
+	pd(TBF,0,0,12,12)
+	hl(TBF,2,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Center)
 
-	local TabLineY = TabY + TAB_H
-	local TabLineInner=frS(Win,lc(TH.A,B.BD,.6))
-	TabLineInner.BackgroundTransparency=.38
-	TabLineInner.Size=UDim2.fromOffset(W,D_H)
-	TabLineInner.Position=UDim2.fromOffset(0,TabLineY)
-	TabLineInner.ZIndex=22
+	local TabLine=frS(Win,lc(TH.A,B.BD,.55),.35)
+	TabLine.Size=UDim2.new(1,0,0,1)
+	TabLine.Position=UDim2.fromOffset(0,TabBarY+TAB_H)
+	TabLine.ZIndex=22
 
-	local BodyY = TabLineY + D_H
+	local BodyY  = TabBarY + TAB_H + 1
+	local BodyH  = DEF_H - BodyY - SB_H
 
 	local Body=frT(Win)
-	Body.Size=UDim2.fromOffset(W,BODY_H)
+	Body.Size=UDim2.new(1,0,1,-(BodyY+SB_H))
 	Body.Position=UDim2.fromOffset(0,BodyY)
 	Body.ClipsDescendants=true
 	Body.ZIndex=15
 
-	local PC=frS(Body,B.S1)
-	PC.BackgroundTransparency=ALPHA
-	PC.Size=UDim2.fromOffset(PC_W,BODY_H)
-	PC.ZIndex=16
-
-	local PCSep=frS(Body,B.BD)
-	PCSep.BackgroundTransparency=.58
-	PCSep.Size=UDim2.fromOffset(1,BODY_H-8)
-	PCSep.Position=UDim2.fromOffset(PC_W,4)
-	PCSep.ZIndex=16
-
-	local AvBg=frS(PC,lc(TH.A,B.BG,.84))
-	AvBg.BackgroundTransparency=ALPHA
-	AvBg.Size=UDim2.fromOffset(60,60)
-	AvBg.Position=UDim2.new(.5,-30,0,14)
-	AvBg.ZIndex=17
-	cr(AvBg,12)
-	local avSK=sk(AvBg,TH.AL,2,.22)
-
-	local AvImg=Instance.new("ImageLabel")
-	AvImg.BackgroundTransparency=1
-	AvImg.Size=UDim2.fromScale(1,1)
-	AvImg.ScaleType=Enum.ScaleType.Fit
-	AvImg.ZIndex=18
-	AvImg.Parent=AvBg
-	cr(AvImg,11)
-
-	task.spawn(function()
-		local ok,url=pcall(function()
-			return Players:GetUserThumbnailAsync(LP.UserId,Enum.ThumbnailType.HeadShot,Enum.ThumbnailSize.Size150x150)
-		end)
-		if ok then AvImg.Image=url end
-	end)
-
-	local NameL=lb(PC,LP.DisplayName,12,Enum.Font.GothamBold,B.TX,Enum.TextXAlignment.Center)
-	NameL.Size=UDim2.new(1,-8,0,15)
-	NameL.Position=UDim2.new(0,4,0,80)
-	NameL.TextTruncate=Enum.TextTruncate.AtEnd
-	NameL.ZIndex=17
-
-	local UserL=lb(PC,"@"..LP.Name,9,Enum.Font.Gotham,B.TS,Enum.TextXAlignment.Center)
-	UserL.Size=UDim2.new(1,-8,0,13)
-	UserL.Position=UDim2.new(0,4,0,96)
-	UserL.TextTruncate=Enum.TextTruncate.AtEnd
-	UserL.ZIndex=17
-
-	local PCsep2=frS(PC,B.BD)
-	PCsep2.BackgroundTransparency=.6
-	PCsep2.Size=UDim2.new(1,-20,0,1)
-	PCsep2.Position=UDim2.new(0,10,0,116)
-	PCsep2.ZIndex=17
-
-	local AgeL=lb(PC,LP.AccountAge.."d old",9,Enum.Font.Gotham,B.TD,Enum.TextXAlignment.Center)
-	AgeL.Size=UDim2.new(1,-8,0,12)
-	AgeL.Position=UDim2.new(0,4,0,124)
-	AgeL.ZIndex=17
-
 	local MP=frT(Body)
-	MP.Size=UDim2.new(1,-(PC_W+8),1,0)
-	MP.Position=UDim2.fromOffset(PC_W+8,0)
+	MP.Size=UDim2.fromScale(1,1)
 	MP.ClipsDescendants=true
 	MP.ZIndex=15
 
-	local SbY = BodyY + BODY_H
-
 	local SBar=frT(Win)
-	SBar.Size=UDim2.fromOffset(W,SB_H)
-	SBar.Position=UDim2.fromOffset(0,SbY)
+	SBar.Size=UDim2.new(1,0,0,SB_H)
+	SBar.Position=UDim2.new(0,0,1,-SB_H)
 	SBar.ZIndex=20
 
-	local SBg=frS(SBar,B.S1)
-	SBg.BackgroundTransparency=ALPHA
+	local SBg=frS(SBar,B.S1,.12)
 	SBg.Size=UDim2.fromScale(1,1)
 	SBg.ZIndex=20
-	cr(SBg,12)
+	cr(SBg,10)
 
-	local SBgFix=frS(SBar,B.S1)
-	SBgFix.BackgroundTransparency=ALPHA
-	SBgFix.Size=UDim2.new(1,0,.5,0)
+	local SBgFix=frS(SBar,B.S1,.12)
+	SBgFix.Size=UDim2.new(1,0,.55,0)
 	SBgFix.ZIndex=20
 
+	local STopLine=frS(Win,B.BD,.5)
+	STopLine.Size=UDim2.new(1,0,0,1)
+	STopLine.Position=UDim2.new(0,0,1,-(SB_H+1))
+	STopLine.ZIndex=21
+
 	local SSDot=frS(SBar,B.CG)
-	SSDot.Size=UDim2.fromOffset(7,7)
-	SSDot.Position=UDim2.new(0,12,0.5,-3.5)
+	SSDot.Size=UDim2.fromOffset(6,6)
+	SSDot.Position=UDim2.new(0,12,0.5,-3)
 	SSDot.ZIndex=22
 	cr(SSDot,4)
 
-	local UptL=lb(SBar,"00:00",10,Enum.Font.GothamMedium,lc(TH.A,B.TD,.5),Enum.TextXAlignment.Left)
-	UptL.Size=UDim2.new(0,70,1,0)
-	UptL.Position=UDim2.fromOffset(24,0)
+	local UptL=lb(SBar,"00:00",10,Enum.Font.GothamMedium,lc(TH.A,B.TD,.45))
+	UptL.Size=UDim2.new(0,60,1,0)
+	UptL.Position=UDim2.fromOffset(22,0)
 	UptL.ZIndex=22
 
-	local StTxt=lb(SBar,"Connected — Orbs v1.3",10,Enum.Font.Gotham,B.TD,Enum.TextXAlignment.Left)
-	StTxt.Size=UDim2.new(1,-110,1,0)
-	StTxt.Position=UDim2.fromOffset(100,0)
+	local StTxt=lb(SBar,"Connected — Orbs v1.3",10,Enum.Font.Gotham,B.TD)
+	StTxt.Size=UDim2.new(1,-200,1,0)
+	StTxt.Position=UDim2.fromOffset(90,0)
 	StTxt.ZIndex=22
 
+	local RszHandle=frS(Win,B.BD,.82)
+	RszHandle.Size=UDim2.fromOffset(14,14)
+	RszHandle.Position=UDim2.new(1,-14,1,-14)
+	RszHandle.ZIndex=25
+	cr(RszHandle,4)
+
+	local RszIcon=lb(RszHandle,"⌟",11,Enum.Font.GothamBold,B.TS,Enum.TextXAlignment.Center)
+	RszIcon.Size=UDim2.fromScale(1,1)
+	RszIcon.TextYAlignment=Enum.TextYAlignment.Center
+	RszIcon.ZIndex=26
+
+	local RszBtn=bt(RszHandle)
+	RszBtn.Size=UDim2.fromScale(1,1)
+	RszBtn.ZIndex=27
+
 	local FB=frS(Gui,TH.A)
-	FB.Size=UDim2.fromOffset(46,46)
+	FB.Size=UDim2.fromOffset(44,44)
 	FB.Position=UDim2.fromOffset(16,16)
 	FB.Visible=false
 	FB.ZIndex=100
-	cr(FB,23)
+	cr(FB,22)
 	local fbSK=sk(FB,TH.AL,2,.35)
-	local FBL=lb(FB,"◈",22,Enum.Font.GothamBold,B.W,Enum.TextXAlignment.Center)
+	local FBL=lb(FB,"◈",20,Enum.Font.GothamBold,B.W,Enum.TextXAlignment.Center)
 	FBL.Size=UDim2.fromScale(1,1)
 	FBL.TextYAlignment=Enum.TextYAlignment.Center
 	FBL.ZIndex=101
@@ -496,26 +497,34 @@ function OrbsUI:_build()
 	FBC.Size=UDim2.fromScale(1,1)
 	FBC.ZIndex=102
 
-	drag(Win,TopBar)
-	drag(FB,FB)
+	makeDrag(Win,TopBar)
+	makeDrag(FB,FB)
+
+	makeResize(Win,RszBtn,function(nw,nh)
+		TopLine.Size=UDim2.new(1,0,0,1)
+		TabLine.Size=UDim2.new(1,0,0,1)
+	end)
 
 	local function hideWin()
-		tw(Win,.22,{Size=UDim2.fromOffset(0,0)},Enum.EasingStyle.Quint)
-		task.wait(.23)
+		tw(Win,.2,{Size=UDim2.fromOffset(0,0)},Enum.EasingStyle.Quint)
+		task.wait(.21)
 		Win.Visible=false
 		FB.Visible=true
 	end
 
 	local function showWin()
+		local cs=Win.AbsoluteSize
+		local sw=cs.X>10 and cs.X or DEF_W
+		local sh=cs.Y>10 and cs.Y or DEF_H
 		Win.Visible=true
 		FB.Visible=false
 		Win.Size=UDim2.fromOffset(0,0)
-		tw(Win,.38,{Size=UDim2.fromOffset(W,H)},Enum.EasingStyle.Back)
+		tw(Win,.36,{Size=UDim2.fromOffset(sw,sh)},Enum.EasingStyle.Back)
 	end
 
 	CloseB.MouseButton1Click:Connect(function()
-		tw(Win,.2,{Size=UDim2.fromOffset(0,0)},Enum.EasingStyle.Quint)
-		task.wait(.21)
+		tw(Win,.18,{Size=UDim2.fromOffset(0,0)},Enum.EasingStyle.Quint)
+		task.wait(.2)
 		Gui:Destroy()
 	end)
 
@@ -527,25 +536,27 @@ function OrbsUI:_build()
 
 	FBC.MouseButton1Click:Connect(function() task.spawn(showWin) end)
 
-	local tc=RunSvc.Heartbeat:Connect(function() UptL.Text=fmtT(tick()-self._t0) end)
+	local tc=RunSvc.Heartbeat:Connect(function()
+		UptL.Text=fmtT(tick()-self._t0)
+	end)
 
-	self._gui  = Gui
-	self._win  = Win
-	self._W    = W
-	self._H    = H
-	self._MP   = MP
-	self._TBF  = TBF
-	self._StTxt= StTxt
-	self._SSDot= SSDot
-	self._NH   = NH
-	self._tc   = tc
-	self._refs = {
+	self._gui    = Gui
+	self._win    = Win
+	self._MP     = MP
+	self._TBF    = TBF
+	self._StTxt  = StTxt
+	self._SSDot  = SSDot
+	self._NH     = NH
+	self._tc     = tc
+	self._DEF_W  = DEF_W
+	self._DEF_H  = DEF_H
+	self._refs   = {
 		winSK=winSK, WinBg=WinBg,
 		TopBg=TopBg, TopBgFix=TopBgFix,
-		TopLineInner=TopLineInner, TabLineInner=TabLineInner,
+		TopLine=TopLine, TabLine=TabLine,
 		TitleL=TitleL, DescL=DescL, IconImg=IconImg,
-		avSK=avSK, AvBg=AvBg,
 		FB=FB, fbSK=fbSK, UptL=UptL,
+		RszHandle=RszHandle, RszIcon=RszIcon,
 	}
 end
 
@@ -555,23 +566,21 @@ function OrbsUI:SetTheme(name)
 	self.TH=TH
 	self.ThemeName=name
 	local r=self._refs
-	local topCol=lc(TH.A,B.BG,.86)
-	tw(r.winSK,       .25,{Color=lc(TH.A,B.BD,.55)})
+	local topCol=lc(TH.A,B.S1,.92)
+	tw(r.winSK,       .25,{Color=lc(TH.A,B.BD,.5)})
 	tw(r.TopBg,       .25,{BackgroundColor3=topCol})
 	tw(r.TopBgFix,    .25,{BackgroundColor3=topCol})
-	tw(r.TopLineInner,.25,{BackgroundColor3=lc(TH.A,B.BD,.6)})
-	tw(r.TabLineInner,.25,{BackgroundColor3=lc(TH.A,B.BD,.6)})
+	tw(r.TopLine,     .25,{BackgroundColor3=lc(TH.A,B.BD,.55)})
+	tw(r.TabLine,     .25,{BackgroundColor3=lc(TH.A,B.BD,.55)})
 	tw(r.TitleL,      .25,{TextColor3=TH.AL})
-	tw(r.avSK,        .25,{Color=TH.AL})
-	tw(r.AvBg,        .25,{BackgroundColor3=lc(TH.A,B.BG,.84)})
 	tw(r.FB,          .25,{BackgroundColor3=TH.A})
 	tw(r.fbSK,        .25,{Color=TH.AL})
-	tw(r.UptL,        .25,{TextColor3=lc(TH.A,B.TD,.5)})
+	tw(r.UptL,        .25,{TextColor3=lc(TH.A,B.TD,.45)})
 	if r.IconImg then tw(r.IconImg,.25,{ImageColor3=TH.AL}) end
 	for _,t in ipairs(self.Tabs) do
 		if t._dline then tw(t._dline,.25,{BackgroundColor3=TH.A}) end
 		if t==self.ActiveTab then
-			tw(t._btn,.25,{BackgroundColor3=lc(TH.A,B.S2,.78)})
+			tw(t._btn,.25,{BackgroundColor3=lc(TH.A,B.S2,.8)})
 			if t._tl   then tw(t._tl,  .25,{TextColor3=TH.AL}) end
 			if t._ic   then tw(t._ic,  .25,{ImageColor3=TH.AL}) end
 			if t._dline then tw(t._dline,.25,{BackgroundTransparency=0}) end
@@ -594,38 +603,40 @@ function OrbsUI:Notify(cfg)
 	self._nN=self._nN+1
 
 	local NF=frS(self._NH,B.S2)
-	NF.Size=UDim2.new(1,0,0,62)
+	NF.BackgroundTransparency=.06
+	NF.Size=UDim2.new(1,0,0,60)
 	NF.Position=UDim2.new(1,8,0,0)
 	NF.LayoutOrder=self._nN
 	NF.ZIndex=901
-	cr(NF,10)
-	sk(NF,B.BD,1,.38)
+	cr(NF,8)
+	sk(NF,B.BD,1,.42)
 
-	local NB=frS(NF,col)
-	NB.Size=UDim2.fromOffset(3,36)
-	NB.Position=UDim2.fromOffset(10,13)
-	NB.ZIndex=902
-	cr(NB,2)
+	local NAccent=frS(NF,col)
+	NAccent.Size=UDim2.fromOffset(3,34)
+	NAccent.Position=UDim2.fromOffset(10,13)
+	NAccent.ZIndex=902
+	cr(NAccent,2)
 
 	local NT=lb(NF,title,13,Enum.Font.GothamBold,B.TX)
-	NT.Size=UDim2.new(1,-56,0,17)
-	NT.Position=UDim2.fromOffset(19,10)
+	NT.Size=UDim2.new(1,-52,0,17)
+	NT.Position=UDim2.fromOffset(18,10)
 	NT.ZIndex=902
 
 	local NC=lb(NF,body,11,Enum.Font.Gotham,B.TS)
-	NC.Size=UDim2.new(1,-56,0,24)
-	NC.Position=UDim2.fromOffset(19,29)
+	NC.Size=UDim2.new(1,-52,0,24)
+	NC.Position=UDim2.fromOffset(18,28)
 	NC.TextWrapped=true
 	NC.TextTruncate=Enum.TextTruncate.AtEnd
 	NC.ZIndex=902
 
 	local NX=frS(NF,B.S3)
-	NX.Size=UDim2.fromOffset(20,20)
-	NX.Position=UDim2.new(1,-28,0,8)
+	NX.BackgroundTransparency=.3
+	NX.Size=UDim2.fromOffset(18,18)
+	NX.Position=UDim2.new(1,-26,0,8)
 	NX.ZIndex=902
 	cr(NX,6)
 
-	local NXL=lb(NX,"✕",10,Enum.Font.GothamBold,B.TS,Enum.TextXAlignment.Center)
+	local NXL=lb(NX,"✕",9,Enum.Font.GothamBold,B.TS,Enum.TextXAlignment.Center)
 	NXL.Size=UDim2.fromScale(1,1)
 	NXL.TextYAlignment=Enum.TextYAlignment.Center
 	NXL.ZIndex=903
@@ -635,22 +646,22 @@ function OrbsUI:Notify(cfg)
 	NXB.ZIndex=904
 
 	NXB.MouseEnter:Connect(function()
-		tw(NX,.1,{BackgroundColor3=B.CR})
+		tw(NX,.1,{BackgroundColor3=B.CR,BackgroundTransparency=0})
 		tw(NXL,.1,{TextColor3=B.W})
 	end)
 	NXB.MouseLeave:Connect(function()
-		tw(NX,.1,{BackgroundColor3=B.S3})
+		tw(NX,.1,{BackgroundColor3=B.S3,BackgroundTransparency=.3})
 		tw(NXL,.1,{TextColor3=B.TS})
 	end)
 
-	tw(NF,.3,{Position=UDim2.new(0,0,0,0)},Enum.EasingStyle.Back)
+	tw(NF,.28,{Position=UDim2.new(0,0,0,0)},Enum.EasingStyle.Back)
 
 	local gone=false
 	local function dismiss()
 		if gone then return end
 		gone=true
-		tw(NF,.2,{Position=UDim2.new(1,8,0,0),BackgroundTransparency=1})
-		task.wait(.22)
+		tw(NF,.18,{Position=UDim2.new(1,8,0,0),BackgroundTransparency=1})
+		task.wait(.2)
 		if NF.Parent then NF:Destroy() end
 	end
 
@@ -667,29 +678,29 @@ function OrbsUI:_selectTab(td)
 	local TH=self.TH
 	local prev=self.ActiveTab
 	for _,t in ipairs(self.Tabs) do
-		if t._tl   then tw(t._tl,  .15,{TextColor3=B.TS}) end
-		if t._ic   then tw(t._ic,  .15,{ImageColor3=B.TD}) end
-		if t._dline then tw(t._dline,.15,{BackgroundTransparency=1}) end
-		tw(t._btn,.15,{BackgroundTransparency=1,BackgroundColor3=B.S2})
+		if t._tl   then tw(t._tl,  .14,{TextColor3=B.TS}) end
+		if t._ic   then tw(t._ic,  .14,{ImageColor3=B.TD}) end
+		if t._dline then tw(t._dline,.14,{BackgroundTransparency=1}) end
+		tw(t._btn,.14,{BackgroundTransparency=1,BackgroundColor3=B.S2})
 	end
-	tw(td._btn,.15,{BackgroundColor3=lc(TH.A,B.S2,.78),BackgroundTransparency=ALPHA})
-	if td._tl   then tw(td._tl,  .15,{TextColor3=TH.AL}) end
-	if td._ic   then tw(td._ic,  .15,{ImageColor3=TH.AL}) end
-	if td._dline then tw(td._dline,.15,{BackgroundTransparency=0}) end
+	tw(td._btn,.14,{BackgroundColor3=lc(TH.A,B.S2,.8),BackgroundTransparency=.22})
+	if td._tl   then tw(td._tl,  .14,{TextColor3=TH.AL}) end
+	if td._ic   then tw(td._ic,  .14,{ImageColor3=TH.AL}) end
+	if td._dline then tw(td._dline,.14,{BackgroundTransparency=0}) end
 	if prev and prev._sc then
-		tw(prev._sc,.16,{Position=UDim2.new(-.06,0,0,0)},Enum.EasingStyle.Quint)
-		task.delay(.17,function()
+		tw(prev._sc,.15,{Position=UDim2.new(-.05,0,0,0)},Enum.EasingStyle.Quint)
+		task.delay(.16,function()
 			if prev._sc then
 				prev._sc.Visible=false
 				prev._sc.Position=UDim2.fromScale(0,0)
 			end
 		end)
 	end
-	td._sc.Position=UDim2.new(.06,0,0,0)
+	td._sc.Position=UDim2.new(.05,0,0,0)
 	td._sc.Visible=true
-	tw(td._sc,.2,{Position=UDim2.fromScale(0,0)},Enum.EasingStyle.Quint)
+	tw(td._sc,.18,{Position=UDim2.fromScale(0,0)},Enum.EasingStyle.Quint)
 	self.ActiveTab=td
-	task.delay(.21,function() self._busy=false end)
+	task.delay(.2,function() self._busy=false end)
 end
 
 function OrbsUI:AddTab(cfg)
@@ -700,7 +711,7 @@ function OrbsUI:AddTab(cfg)
 
 	local Btn=Instance.new("TextButton")
 	Btn.AutomaticSize=Enum.AutomaticSize.X
-	Btn.Size=UDim2.new(0,0,1,-8)
+	Btn.Size=UDim2.new(0,0,1,-6)
 	Btn.BackgroundColor3=B.S2
 	Btn.BackgroundTransparency=1
 	Btn.Text=""
@@ -713,7 +724,7 @@ function OrbsUI:AddTab(cfg)
 
 	local bIc=nil
 	if icn then
-		bIc=ico(Btn,icn,13,B.TD)
+		bIc=ico(Btn,icn,12,B.TD)
 		bIc.ZIndex=23
 	end
 
@@ -724,8 +735,8 @@ function OrbsUI:AddTab(cfg)
 
 	local dline=frS(Btn,TH.A)
 	dline.BackgroundTransparency=1
-	dline.Size=UDim2.new(1,-4,0,2)
-	dline.Position=UDim2.new(0,2,1,-2)
+	dline.Size=UDim2.new(1,-6,0,2)
+	dline.Position=UDim2.new(0,3,1,-2)
 	dline.ZIndex=24
 	cr(dline,1)
 
@@ -735,29 +746,31 @@ function OrbsUI:AddTab(cfg)
 	SC.Size=UDim2.fromScale(1,1)
 	SC.ScrollBarThickness=3
 	SC.ScrollBarImageColor3=B.BD
-	SC.ScrollBarImageTransparency=.4
+	SC.ScrollBarImageTransparency=.42
 	SC.CanvasSize=UDim2.new(0,0,0,0)
 	SC.AutomaticCanvasSize=Enum.AutomaticSize.Y
 	SC.Visible=false
 	SC.ZIndex=16
 	SC.Parent=self._MP
-	vl(SC,7)
-	pd(SC,6,14,5,5)
+	vl(SC,6)
+	pd(SC,8,14,8,8)
 
 	local td={Name=name,_btn=Btn,_tl=bTl,_ic=bIc,_dline=dline,_sc=SC,_acBar=nil}
 	table.insert(self.Tabs,td)
 
 	Btn.MouseButton1Click:Connect(function() self:_selectTab(td) end)
 	Btn.MouseEnter:Connect(function()
-		if self.ActiveTab~=td then tw(Btn,.1,{BackgroundTransparency=ALPHA+.2,BackgroundColor3=B.S2}) end
+		if self.ActiveTab~=td then
+			tw(Btn,.1,{BackgroundTransparency=.72,BackgroundColor3=B.S3})
+		end
 	end)
 	Btn.MouseLeave:Connect(function()
 		if self.ActiveTab~=td then tw(Btn,.1,{BackgroundTransparency=1}) end
 	end)
 
 	if #self.Tabs==1 then
-		Btn.BackgroundColor3=lc(TH.A,B.S2,.78)
-		Btn.BackgroundTransparency=ALPHA
+		Btn.BackgroundColor3=lc(TH.A,B.S2,.8)
+		Btn.BackgroundTransparency=.22
 		bTl.TextColor3=TH.AL
 		if bIc then bIc.ImageColor3=TH.AL end
 		dline.BackgroundTransparency=0
@@ -768,11 +781,10 @@ function OrbsUI:AddTab(cfg)
 	local selfRef=self
 
 	local function mkF(h,parent)
-		local f=frS(parent or SC,B.S2)
-		f.BackgroundTransparency=ALPHA
-		f.Size=UDim2.new(1,-2,0,h)
-		cr(f,8)
-		sk(f,B.BD,1,.62)
+		local f=frS(parent or SC,B.S2,.18)
+		f.Size=UDim2.new(1,0,0,h)
+		cr(f,7)
+		sk(f,B.BD,1,.58)
 		return f
 	end
 
@@ -782,47 +794,44 @@ function OrbsUI:AddTab(cfg)
 		o=o or {}
 		local secName=o.Name or "Section"
 
-		local SF=frS(SC,B.S1)
-		SF.BackgroundTransparency=ALPHA+.05
-		SF.Size=UDim2.new(1,-2,0,0)
+		local SF=frS(SC,B.S1,.1)
+		SF.Size=UDim2.new(1,0,0,0)
 		SF.AutomaticSize=Enum.AutomaticSize.Y
-		cr(SF,10)
-		sk(SF,B.BD,1,.5)
+		cr(SF,8)
+		sk(SF,B.BD,1,.52)
 
 		local SH=frT(SF)
-		SH.Size=UDim2.new(1,0,0,34)
+		SH.Size=UDim2.new(1,0,0,32)
 		pd(SH,0,0,12,12)
-		hl(SH,8,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Center)
+		hl(SH,7,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Center)
 
-		local SBarAccent=frS(SH,selfRef.TH.A)
-		SBarAccent.Size=UDim2.fromOffset(3,14)
-		cr(SBarAccent,2)
-		td._acBar=SBarAccent
+		local SAccent=frS(SH,selfRef.TH.A)
+		SAccent.Size=UDim2.fromOffset(3,13)
+		cr(SAccent,2)
+		td._acBar=SAccent
 
 		local STL=lb(SH,secName,12,Enum.Font.GothamBold,B.TX)
-		STL.Size=UDim2.new(1,-28,1,0)
+		STL.Size=UDim2.new(1,-26,1,0)
 
-		local SDv=frS(SF,B.BD)
-		SDv.BackgroundTransparency=.6
-		SDv.Size=UDim2.new(1,-22,0,1)
-		SDv.Position=UDim2.fromOffset(11,34)
+		local SDv=frS(SF,B.BD,.62)
+		SDv.Size=UDim2.new(1,-20,0,1)
+		SDv.Position=UDim2.fromOffset(10,32)
 
 		local SC2=frT(SF)
-		SC2.Size=UDim2.new(1,-22,0,0)
-		SC2.Position=UDim2.fromOffset(11,42)
+		SC2.Size=UDim2.new(1,-16,0,0)
+		SC2.Position=UDim2.fromOffset(8,40)
 		SC2.AutomaticSize=Enum.AutomaticSize.Y
-		vl(SC2,5)
+		vl(SC2,4)
 
 		local bot=Instance.new("UIPadding")
-		bot.PaddingBottom=UDim.new(0,10)
+		bot.PaddingBottom=UDim.new(0,8)
 		bot.Parent=SF
 
 		local function smk(h2)
-			local f=frS(SC2,B.S2)
-			f.BackgroundTransparency=ALPHA
+			local f=frS(SC2,B.S2,.22)
 			f.Size=UDim2.new(1,0,0,h2)
-			cr(f,7)
-			sk(f,B.BD,1,.64)
+			cr(f,6)
+			sk(f,B.BD,1,.62)
 			return f
 		end
 
@@ -834,19 +843,18 @@ function OrbsUI:AddTab(cfg)
 		function secAPI:AddDropdown(o2) return _Dropdown(SC2,o2,selfRef.TH) end
 		function secAPI:AddParagraph(o2)
 			o2=o2 or {}
-			local PF=frS(SC2,B.S2)
-			PF.BackgroundTransparency=ALPHA
+			local PF=frS(SC2,B.S2,.22)
 			PF.Size=UDim2.new(1,0,0,0)
 			PF.AutomaticSize=Enum.AutomaticSize.Y
-			cr(PF,7)
-			sk(PF,B.BD,1,.64)
-			pd(PF,10,10,12,12)
+			cr(PF,6)
+			sk(PF,B.BD,1,.62)
+			pd(PF,9,9,11,11)
 			local PT=lb(PF,o2.Title or "",13,Enum.Font.GothamBold,B.TX)
-			PT.Size=UDim2.new(1,0,0,o2.Title~="" and 18 or 0)
+			PT.Size=UDim2.new(1,0,0,o2.Title~="" and 17 or 0)
 			local PC2=lb(PF,o2.Content or "",11,Enum.Font.Gotham,B.TS)
 			PC2.Size=UDim2.new(1,0,0,0)
 			PC2.AutomaticSize=Enum.AutomaticSize.Y
-			PC2.Position=UDim2.fromOffset(0,o2.Title~="" and 22 or 0)
+			PC2.Position=UDim2.fromOffset(0,o2.Title~="" and 20 or 0)
 			PC2.TextWrapped=true
 			PC2.TextYAlignment=Enum.TextYAlignment.Top
 			local p={}
@@ -863,49 +871,39 @@ function OrbsUI:AddTab(cfg)
 	function tabAPI:AddInput(o)    return _Input(function(h) return mkF(h) end,o,selfRef.TH) end
 	function tabAPI:AddDropdown(o) return _Dropdown(SC,o,selfRef.TH) end
 
-	function tabAPI:AddLabel(o)
-		o=o or {}
-		local l=lb(SC,(o.Text or ""):upper(),10,Enum.Font.GothamBold,B.TD)
-		l.Size=UDim2.new(1,-2,0,18)
-		l.LetterSpacing=1
-		local a={}
-		function a:Set(t) l.Text=t end
-		return a
-	end
-
 	function tabAPI:AddColorPicker(o)
 		o=o or {}
 		local cb=o.Callback or function() end
 		local cols={
-			{n="Purple",c=Color3.fromRGB(128,82,232)},
-			{n="Red",   c=Color3.fromRGB(222,62,62)},
-			{n="Cyan",  c=Color3.fromRGB(32,182,222)},
-			{n="Green", c=Color3.fromRGB(42,182,102)},
-			{n="Gold",  c=Color3.fromRGB(212,162,30)},
-			{n="Orange",c=Color3.fromRGB(222,112,30)},
-			{n="Pink",  c=Color3.fromRGB(202,52,162)},
-			{n="White", c=Color3.fromRGB(202,202,212)},
+			{n="Purple",c=Color3.fromRGB(120,76,220)},
+			{n="Red",   c=Color3.fromRGB(215,58,58)},
+			{n="Cyan",  c=Color3.fromRGB(28,175,215)},
+			{n="Green", c=Color3.fromRGB(38,175,96)},
+			{n="Gold",  c=Color3.fromRGB(205,156,26)},
+			{n="Orange",c=Color3.fromRGB(215,106,26)},
+			{n="Pink",  c=Color3.fromRGB(195,46,156)},
+			{n="White", c=Color3.fromRGB(195,195,205)},
 		}
-		local RF=mkF(58)
-		local HL=lb(RF,(o.Name or "Color"):upper(),10,Enum.Font.GothamBold,B.TD)
-		HL.Size=UDim2.new(1,-20,0,14)
+		local RF=mkF(56)
+		local HL=lb(RF,(o.Name or "Color"):upper(),9,Enum.Font.GothamBold,B.TD)
+		HL.Size=UDim2.new(1,-18,0,13)
 		HL.Position=UDim2.fromOffset(10,6)
 		HL.LetterSpacing=1
 		local SR=frT(RF)
-		SR.Size=UDim2.new(1,-20,0,22)
-		SR.Position=UDim2.fromOffset(10,29)
-		hl(SR,7)
+		SR.Size=UDim2.new(1,-18,0,22)
+		SR.Position=UDim2.fromOffset(9,26)
+		hl(SR,6)
 		local sw={}
 		local curTheme=selfRef.ThemeName
-		for i,c in ipairs(cols) do
+		for _,c in ipairs(cols) do
 			local s=Instance.new("TextButton")
-			s.Size=UDim2.fromOffset(20,20)
+			s.Size=UDim2.fromOffset(22,22)
 			s.BackgroundColor3=c.c
 			s.Text=""
 			s.BorderSizePixel=0
 			s.ZIndex=17
 			s.Parent=SR
-			cr(s,5)
+			cr(s,6)
 			local ss=sk(s,B.W,2,c.n==curTheme and 0 or 1)
 			table.insert(sw,{b=s,s=ss,n=c.n})
 			s.MouseButton1Click:Connect(function()
@@ -918,9 +916,8 @@ function OrbsUI:AddTab(cfg)
 
 	function tabAPI:AddSeparator()
 		local s=frT(SC)
-		s.Size=UDim2.new(1,-2,0,1)
-		local si=frS(s,B.BD)
-		si.BackgroundTransparency=.65
+		s.Size=UDim2.new(1,0,0,1)
+		local si=frS(s,B.BD,.68)
 		si.Size=UDim2.fromScale(1,1)
 	end
 
@@ -935,44 +932,45 @@ _Toggle = function(mkF,o,TH)
 	local icn=o.Icon
 	local cb=o.Callback or function() end
 	local state=def
-	local H=desc~="" and 54 or 36
+	local H=desc~="" and 52 or 34
 
 	local F=mkF(H)
 	if icn then
-		local i=ico(F,icn,14,B.TS)
-		i.Position=UDim2.fromOffset(10,H/2-7)
+		local i=ico(F,icn,13,B.TS)
+		i.Position=UDim2.fromOffset(10,H/2-6)
 	end
 	local TL=lb(F,name,12,Enum.Font.GothamSemibold,B.TX)
-	TL.Size=UDim2.new(1,-(icn and 72 or 54),0,15)
-	TL.Position=UDim2.fromOffset(icn and 30 or 12,desc~="" and 9 or 10)
+	TL.Size=UDim2.new(1,-(icn and 68 or 50),0,15)
+	TL.Position=UDim2.fromOffset(icn and 28 or 11,desc~="" and 8 or 10)
 	if desc~="" then
 		local DL=lb(F,desc,10,Enum.Font.Gotham,B.TS)
-		DL.Size=UDim2.new(1,-(icn and 72 or 54),0,13)
-		DL.Position=UDim2.fromOffset(icn and 30 or 12,26)
+		DL.Size=UDim2.new(1,-(icn and 68 or 50),0,13)
+		DL.Position=UDim2.fromOffset(icn and 28 or 11,25)
 		DL.TextTruncate=Enum.TextTruncate.AtEnd
 	end
+
 	local Tr=frS(F,state and TH.A or B.S4)
-	Tr.Size=UDim2.fromOffset(34,18)
-	Tr.Position=UDim2.new(1,-42,0.5,-9)
+	Tr.Size=UDim2.fromOffset(32,17)
+	Tr.Position=UDim2.new(1,-40,0.5,-8)
 	cr(Tr,9)
-	local TrSK=sk(Tr,state and TH.AL or B.BD,1,.5)
+	local TrSK=sk(Tr,state and TH.AL or B.BD,1,.52)
 	local Kn=frS(Tr,B.W)
-	Kn.Size=UDim2.fromOffset(12,12)
-	Kn.Position=UDim2.fromOffset(state and 19 or 3,3)
+	Kn.Size=UDim2.fromOffset(11,11)
+	Kn.Position=UDim2.fromOffset(state and 18 or 3,3)
 	cr(Kn,6)
 	local C2=bt(F)
 	C2.Size=UDim2.fromScale(1,1)
 
 	local function set(v)
 		state=v
-		tw(Tr,.18,{BackgroundColor3=v and TH.A or B.S4})
-		tw(TrSK,.18,{Color=v and TH.AL or B.BD})
-		tw(Kn,.18,{Position=UDim2.fromOffset(v and 19 or 3,3)},Enum.EasingStyle.Back)
+		tw(Tr,.16,{BackgroundColor3=v and TH.A or B.S4})
+		tw(TrSK,.16,{Color=v and TH.AL or B.BD})
+		tw(Kn,.16,{Position=UDim2.fromOffset(v and 18 or 3,3)},Enum.EasingStyle.Back)
 		task.spawn(cb,v)
 	end
 
-	C2.MouseEnter:Connect(function() tw(F,.08,{BackgroundColor3=B.S3}) end)
-	C2.MouseLeave:Connect(function() tw(F,.08,{BackgroundColor3=B.S2}) end)
+	C2.MouseEnter:Connect(function() tw(F,.08,{BackgroundColor3=B.S3,BackgroundTransparency=.08}) end)
+	C2.MouseLeave:Connect(function() tw(F,.08,{BackgroundColor3=B.S2,BackgroundTransparency=.18}) end)
 	C2.MouseButton1Click:Connect(function() set(not state) end)
 	if state then task.spawn(cb,state) end
 
@@ -995,46 +993,52 @@ _Slider = function(mkF,o,TH)
 	local cb=o.Callback or function() end
 	local val=math.clamp(def,mn,mx)
 	local drag2=false
-	local H=desc~="" and 66 or 50
+	local H=desc~="" and 62 or 48
 
 	local F=mkF(H)
 	if icn then
-		local i=ico(F,icn,14,B.TS)
-		i.Position=UDim2.fromOffset(10,10)
+		local i=ico(F,icn,13,B.TS)
+		i.Position=UDim2.fromOffset(10,9)
 	end
 	local TL=lb(F,name,12,Enum.Font.GothamSemibold,B.TX)
-	TL.Size=UDim2.new(1,-70,0,15)
-	TL.Position=UDim2.fromOffset(icn and 30 or 12,9)
+	TL.Size=UDim2.new(1,-68,0,15)
+	TL.Position=UDim2.fromOffset(icn and 28 or 11,8)
 	local VL=lb(F,tostring(val)..suf,12,Enum.Font.GothamBold,TH.AL,Enum.TextXAlignment.Right)
-	VL.Size=UDim2.new(0,52,0,15)
-	VL.Position=UDim2.new(1,-60,0,9)
+	VL.Size=UDim2.new(0,50,0,15)
+	VL.Position=UDim2.new(1,-58,0,8)
 	if desc~="" then
 		local DL=lb(F,desc,10,Enum.Font.Gotham,B.TS)
-		DL.Size=UDim2.new(1,-24,0,13)
-		DL.Position=UDim2.fromOffset(12,26)
+		DL.Size=UDim2.new(1,-22,0,13)
+		DL.Position=UDim2.fromOffset(11,24)
 		DL.TextTruncate=Enum.TextTruncate.AtEnd
 	end
-	local tY=desc~="" and 44 or 30
-	local Tr=frS(F,B.S4)
-	Tr.Size=UDim2.new(1,-22,0,4)
-	Tr.Position=UDim2.fromOffset(11,tY)
+	local tY=desc~="" and 42 or 28
+	local TrackBg=frS(F,B.S4,.1)
+	TrackBg.Size=UDim2.new(1,-20,0,4)
+	TrackBg.Position=UDim2.fromOffset(10,tY)
+	cr(TrackBg,3)
+
+	local Tr=frS(TrackBg,B.S4)
+	Tr.Size=UDim2.fromScale(1,1)
 	cr(Tr,3)
+
 	local Fi=frS(Tr,TH.A)
 	Fi.Size=UDim2.new((val-mn)/(mx-mn),0,1,0)
 	cr(Fi,3)
+
 	local Kn=frS(Tr,B.W)
 	Kn.Size=UDim2.fromOffset(13,13)
 	Kn.Position=UDim2.new((val-mn)/(mx-mn),-6,0.5,-6)
 	cr(Kn,7)
-	sk(Kn,TH.AL,1.5,.3)
+	sk(Kn,TH.AL,1.5,.32)
 
 	local function set(v)
 		v=math.clamp(v,mn,mx)
 		if rnd>0 then v=math.round(v/rnd)*rnd end
 		val=v
 		local p=(v-mn)/(mx-mn)
-		tw(Fi,.06,{Size=UDim2.new(p,0,1,0)})
-		tw(Kn,.06,{Position=UDim2.new(p,-6,0.5,-6)})
+		tw(Fi,.05,{Size=UDim2.new(p,0,1,0)})
+		tw(Kn,.05,{Position=UDim2.new(p,-6,0.5,-6)})
 		VL.Text=tostring(v)..suf
 		task.spawn(cb,v)
 	end
@@ -1082,79 +1086,79 @@ _Button = function(mkF,o,TH,gui)
 	local icn=o.Icon
 	local conf=o.Confirm or false
 	local cb=o.Callback or function() end
-	local H=desc~="" and 54 or 36
+	local H=desc~="" and 52 or 34
 
 	local F=mkF(H)
 	if icn then
-		local i=ico(F,icn,14,B.TS)
-		i.Position=UDim2.fromOffset(10,H/2-7)
+		local i=ico(F,icn,13,B.TS)
+		i.Position=UDim2.fromOffset(10,H/2-6)
 	end
 	local TL=lb(F,name,12,Enum.Font.GothamSemibold,B.TX)
-	TL.Size=UDim2.new(1,-(icn and 72 or 52),0,15)
-	TL.Position=UDim2.fromOffset(icn and 30 or 12,desc~="" and 9 or 10)
+	TL.Size=UDim2.new(1,-(icn and 68 or 50),0,15)
+	TL.Position=UDim2.fromOffset(icn and 28 or 11,desc~="" and 8 or 10)
 	if desc~="" then
 		local DL=lb(F,desc,10,Enum.Font.Gotham,B.TS)
-		DL.Size=UDim2.new(1,-(icn and 72 or 52),0,13)
-		DL.Position=UDim2.fromOffset(icn and 30 or 12,26)
+		DL.Size=UDim2.new(1,-(icn and 68 or 50),0,13)
+		DL.Position=UDim2.fromOffset(icn and 28 or 11,24)
 		DL.TextTruncate=Enum.TextTruncate.AtEnd
 	end
-	local Ar=frS(F,TH.A)
-	Ar.BackgroundTransparency=.82
-	Ar.Size=UDim2.fromOffset(22,22)
-	Ar.Position=UDim2.new(1,-30,0.5,-11)
+	local Ar=frS(F,TH.A,.78)
+	Ar.Size=UDim2.fromOffset(20,20)
+	Ar.Position=UDim2.new(1,-28,0.5,-10)
 	cr(Ar,6)
-	local ArL=lb(Ar,"›",17,Enum.Font.GothamBold,TH.AL,Enum.TextXAlignment.Center)
+	local ArL=lb(Ar,"›",16,Enum.Font.GothamBold,TH.AL,Enum.TextXAlignment.Center)
 	ArL.Size=UDim2.fromScale(1,1)
 	ArL.TextYAlignment=Enum.TextYAlignment.Center
 	local C2=bt(F)
 	C2.Size=UDim2.fromScale(1,1)
 
 	C2.MouseEnter:Connect(function()
-		tw(F,.1,{BackgroundColor3=B.S3})
+		tw(F,.1,{BackgroundColor3=B.S3,BackgroundTransparency=.08})
 		tw(TL,.1,{TextColor3=TH.AL})
-		tw(Ar,.1,{BackgroundTransparency=.62})
+		tw(Ar,.1,{BackgroundTransparency=.55})
 	end)
 	C2.MouseLeave:Connect(function()
-		tw(F,.1,{BackgroundColor3=B.S2})
+		tw(F,.1,{BackgroundColor3=B.S2,BackgroundTransparency=.18})
 		tw(TL,.1,{TextColor3=B.TX})
-		tw(Ar,.1,{BackgroundTransparency=.82})
+		tw(Ar,.1,{BackgroundTransparency=.78})
 	end)
 
 	local function doConf(cb2)
 		local OV=Instance.new("Frame")
 		OV.BackgroundColor3=Color3.new()
-		OV.BackgroundTransparency=.55
+		OV.BackgroundTransparency=.52
 		OV.Size=UDim2.fromScale(1,1)
 		OV.BorderSizePixel=0
 		OV.ZIndex=500
 		OV.Parent=gui
 
 		local DF=frS(gui,B.S2)
+		DF.BackgroundTransparency=.06
 		DF.Size=UDim2.fromOffset(0,0)
 		DF.Position=UDim2.fromScale(.5,.5)
 		DF.AnchorPoint=Vector2.new(.5,.5)
 		DF.ZIndex=501
-		cr(DF,12)
-		sk(DF,B.BD,1,.32)
-		tw(DF,.28,{Size=UDim2.fromOffset(304,120)},Enum.EasingStyle.Back)
+		cr(DF,10)
+		sk(DF,B.BD,1,.3)
+		tw(DF,.26,{Size=UDim2.fromOffset(296,114)},Enum.EasingStyle.Back)
 
-		local DT=lb(DF,"Confirm",15,Enum.Font.GothamBold,B.TX)
-		DT.Size=UDim2.new(1,-28,0,20)
-		DT.Position=UDim2.fromOffset(14,12)
+		local DT=lb(DF,"Confirm",14,Enum.Font.GothamBold,B.TX)
+		DT.Size=UDim2.new(1,-24,0,18)
+		DT.Position=UDim2.fromOffset(12,12)
 		DT.ZIndex=502
 
 		local DX=lb(DF,"Are you sure?",11,Enum.Font.Gotham,B.TS)
-		DX.Size=UDim2.new(1,-28,0,26)
-		DX.Position=UDim2.fromOffset(14,36)
+		DX.Size=UDim2.new(1,-24,0,24)
+		DX.Position=UDim2.fromOffset(12,32)
 		DX.TextWrapped=true
 		DX.ZIndex=502
 
 		local function dB(tx,co,xoff)
 			local db=frS(DF,co)
-			db.Size=UDim2.fromOffset(90,26)
-			db.Position=UDim2.new(1,xoff,1,-36)
+			db.Size=UDim2.fromOffset(86,24)
+			db.Position=UDim2.new(1,xoff,1,-34)
 			db.ZIndex=502
-			cr(db,7)
+			cr(db,6)
 			local dl=lb(db,tx,11,Enum.Font.GothamSemibold,B.W,Enum.TextXAlignment.Center)
 			dl.Size=UDim2.fromScale(1,1)
 			dl.TextYAlignment=Enum.TextYAlignment.Center
@@ -1169,23 +1173,23 @@ _Button = function(mkF,o,TH,gui)
 		local function cD()
 			if closed then return end
 			closed=true
-			tw(DF,.15,{Size=UDim2.fromOffset(0,0)})
-			task.wait(.16)
+			tw(DF,.14,{Size=UDim2.fromOffset(0,0)})
+			task.wait(.15)
 			OV:Destroy()
 			DF:Destroy()
 		end
 
-		dB("Cancel",B.S4,-198).MouseButton1Click:Connect(cD)
-		dB("Confirm",TH.A,-100).MouseButton1Click:Connect(function() cD();task.spawn(cb2) end)
+		dB("Cancel",B.S4,-190).MouseButton1Click:Connect(cD)
+		dB("Confirm",TH.A,-96).MouseButton1Click:Connect(function() cD();task.spawn(cb2) end)
 		OV.InputBegan:Connect(function(i)
 			if i.UserInputType==Enum.UserInputType.MouseButton1 then cD() end
 		end)
 	end
 
 	C2.MouseButton1Click:Connect(function()
-		tw(F,.06,{Size=UDim2.new(1,-2,0,H-3)})
+		tw(F,.06,{Size=UDim2.new(1,0,0,H-2)})
 		task.wait(.06)
-		tw(F,.1,{Size=UDim2.new(1,-2,0,H)},Enum.EasingStyle.Back)
+		tw(F,.1,{Size=UDim2.new(1,0,0,H)},Enum.EasingStyle.Back)
 		if conf then doConf(cb) else task.spawn(cb) end
 	end)
 
@@ -1205,49 +1209,49 @@ _Input = function(mkF,o,TH)
 	local icn=o.Icon
 	local cb=o.Callback or function() end
 	local val=def
-	local H=desc~="" and 66 or 50
+	local H=desc~="" and 64 or 48
 
 	local F=mkF(H)
 	local FSK=F:FindFirstChildOfClass("UIStroke")
 	if icn then
-		local i=ico(F,icn,14,B.TS)
-		i.Position=UDim2.fromOffset(10,10)
+		local i=ico(F,icn,13,B.TS)
+		i.Position=UDim2.fromOffset(10,9)
 	end
 	local TL=lb(F,name,12,Enum.Font.GothamSemibold,B.TX)
-	TL.Size=UDim2.new(1,-24,0,15)
-	TL.Position=UDim2.fromOffset(icn and 30 or 12,desc~="" and 8 or 6)
+	TL.Size=UDim2.new(1,-22,0,15)
+	TL.Position=UDim2.fromOffset(icn and 28 or 11,desc~="" and 7 or 5)
 	if desc~="" then
 		local DL=lb(F,desc,10,Enum.Font.Gotham,B.TS)
-		DL.Size=UDim2.new(1,-24,0,13)
-		DL.Position=UDim2.fromOffset(12,24)
+		DL.Size=UDim2.new(1,-22,0,13)
+		DL.Position=UDim2.fromOffset(11,22)
 		DL.TextTruncate=Enum.TextTruncate.AtEnd
 	end
 	local IB=Instance.new("TextBox")
 	IB.BackgroundColor3=B.S3
-	IB.BackgroundTransparency=.1
+	IB.BackgroundTransparency=.12
 	IB.BorderSizePixel=0
-	IB.Size=UDim2.new(1,-22,0,24)
-	IB.Position=UDim2.fromOffset(11,desc~="" and 42 or 24)
+	IB.Size=UDim2.new(1,-18,0,22)
+	IB.Position=UDim2.fromOffset(9,desc~="" and 40 or 22)
 	IB.Text=def
 	IB.PlaceholderText=ph
 	IB.PlaceholderColor3=B.TD
 	IB.TextColor3=B.TX
-	IB.TextSize=12
+	IB.TextSize=11
 	IB.Font=Enum.Font.Gotham
 	IB.TextXAlignment=Enum.TextXAlignment.Left
 	IB.ZIndex=17
 	IB.Parent=F
-	cr(IB,6)
-	pd(IB,0,0,9,9)
-	local ibSK=sk(IB,B.BD,1,.5)
+	cr(IB,5)
+	pd(IB,0,0,8,8)
+	local ibSK=sk(IB,B.BD,1,.52)
 
 	IB.Focused:Connect(function()
-		tw(ibSK,.12,{Color=TH.A,Transparency=.1})
-		if FSK then tw(FSK,.12,{Color=TH.A,Transparency=.32}) end
+		tw(ibSK,.12,{Color=TH.A,Transparency=.12})
+		if FSK then tw(FSK,.12,{Color=TH.A,Transparency=.3}) end
 	end)
 	IB.FocusLost:Connect(function(e)
-		tw(ibSK,.12,{Color=B.BD,Transparency=.5})
-		if FSK then tw(FSK,.12,{Color=B.BD,Transparency=.62}) end
+		tw(ibSK,.12,{Color=B.BD,Transparency=.52})
+		if FSK then tw(FSK,.12,{Color=B.BD,Transparency=.58}) end
 		if fin and e then val=IB.Text;task.spawn(cb,val) end
 	end)
 	if not fin then
@@ -1277,49 +1281,48 @@ _Dropdown = function(parent,o,TH)
 	local icn=o.Icon
 	local cb=o.Callback or function() end
 	local open=false
-	local H=desc~="" and 54 or 36
+	local H=desc~="" and 52 or 34
 	local sel=multi and {} or def
 	if multi and type(def)=="table" then
 		for _,v in pairs(def) do sel[v]=true end
 	end
 
-	local F=frS(parent,B.S2)
-	F.BackgroundTransparency=ALPHA
-	F.Size=UDim2.new(1,-2,0,H)
+	local F=frS(parent,B.S2,.18)
+	F.Size=UDim2.new(1,0,0,H)
 	F.ClipsDescendants=true
-	cr(F,8)
-	local FSK=sk(F,B.BD,1,.62)
+	cr(F,7)
+	local FSK=sk(F,B.BD,1,.58)
 
 	if icn then
-		local i=ico(F,icn,14,B.TS)
-		i.Position=UDim2.fromOffset(10,H/2-7)
+		local i=ico(F,icn,13,B.TS)
+		i.Position=UDim2.fromOffset(10,H/2-6)
 	end
 
 	local TL=lb(F,name,12,Enum.Font.GothamSemibold,B.TX)
-	TL.Size=UDim2.new(1,-(icn and 62 or 44),0,15)
-	TL.Position=UDim2.fromOffset(icn and 30 or 12,desc~="" and 9 or 10)
+	TL.Size=UDim2.new(1,-(icn and 58 or 40),0,15)
+	TL.Position=UDim2.fromOffset(icn and 28 or 11,desc~="" and 8 or 10)
 
-	local Ar=lb(F,"⌄",13,Enum.Font.GothamBold,B.TS,Enum.TextXAlignment.Center)
-	Ar.Size=UDim2.fromOffset(16,15)
-	Ar.Position=UDim2.new(1,-22,0,desc~="" and 9 or 10)
+	local Ar=lb(F,"⌄",12,Enum.Font.GothamBold,B.TS,Enum.TextXAlignment.Center)
+	Ar.Size=UDim2.fromOffset(14,14)
+	Ar.Position=UDim2.new(1,-20,0,desc~="" and 8 or 10)
 
 	if desc~="" then
 		local DL=lb(F,desc,10,Enum.Font.Gotham,B.TS)
-		DL.Size=UDim2.new(1,-44,0,13)
-		DL.Position=UDim2.fromOffset(12,25)
+		DL.Size=UDim2.new(1,-40,0,13)
+		DL.Position=UDim2.fromOffset(11,24)
 		DL.TextTruncate=Enum.TextTruncate.AtEnd
 	end
 
 	local VL=lb(F,"",11,Enum.Font.GothamMedium,TH.AL)
-	VL.Size=UDim2.new(1,-44,0,13)
-	VL.Position=UDim2.fromOffset(12,desc~="" and 38 or 22)
+	VL.Size=UDim2.new(1,-40,0,12)
+	VL.Position=UDim2.fromOffset(11,desc~="" and 37 or 20)
 	VL.TextTruncate=Enum.TextTruncate.AtEnd
 
-	local DL2=frS(F,B.S3)
-	DL2.Size=UDim2.new(1,-6,0,0)
-	DL2.Position=UDim2.fromOffset(3,H+3)
-	cr(DL2,7)
-	sk(DL2,B.BD,1,.52)
+	local DL2=frS(F,B.S3,.16)
+	DL2.Size=UDim2.new(1,-8,0,0)
+	DL2.Position=UDim2.fromOffset(4,H+3)
+	cr(DL2,6)
+	sk(DL2,B.BD,1,.5)
 
 	local DSc=Instance.new("ScrollingFrame")
 	DSc.BackgroundTransparency=1
@@ -1349,11 +1352,11 @@ _Dropdown = function(parent,o,TH)
 
 	local function togO()
 		open=not open
-		local lh=open and math.min(#items*26+6,126) or 0
-		tw(F,.2,{Size=UDim2.new(1,-2,0,H+(open and lh+6 or 0))})
-		tw(DL2,.2,{Size=UDim2.new(1,-6,0,lh)})
-		tw(Ar,.16,{Rotation=open and 180 or 0})
-		tw(FSK,.14,{Color=open and TH.A or B.BD,Transparency=open and .18 or .62})
+		local lh=open and math.min(#items*24+6,120) or 0
+		tw(F,.18,{Size=UDim2.new(1,0,0,H+(open and lh+6 or 0))})
+		tw(DL2,.18,{Size=UDim2.new(1,-8,0,lh)})
+		tw(Ar,.14,{Rotation=open and 180 or 0})
+		tw(FSK,.12,{Color=open and TH.A or B.BD,Transparency=open and .16 or .58})
 	end
 
 	DC.MouseButton1Click:Connect(togO)
@@ -1363,9 +1366,8 @@ _Dropdown = function(parent,o,TH)
 			if c:IsA("Frame") then c:Destroy() end
 		end
 		for i,v in ipairs(items) do
-			local OF=frS(DSc,B.S2)
-			OF.BackgroundTransparency=.6
-			OF.Size=UDim2.new(1,0,0,24)
+			local OF=frS(DSc,B.S2,.55)
+			OF.Size=UDim2.new(1,0,0,22)
 			OF.LayoutOrder=i
 			cr(OF,5)
 			local isA=multi and sel[v] or (not multi and sel==v)
@@ -1376,8 +1378,8 @@ _Dropdown = function(parent,o,TH)
 			local OB=bt(OF)
 			OB.Size=UDim2.fromScale(1,1)
 			OB.ZIndex=20
-			OB.MouseEnter:Connect(function() tw(OF,.07,{BackgroundTransparency=.28}) end)
-			OB.MouseLeave:Connect(function() tw(OF,.07,{BackgroundTransparency=.6}) end)
+			OB.MouseEnter:Connect(function() tw(OF,.06,{BackgroundTransparency=.22}) end)
+			OB.MouseLeave:Connect(function() tw(OF,.06,{BackgroundTransparency=.55}) end)
 			OB.MouseButton1Click:Connect(function()
 				if multi then
 					sel[v]=not sel[v]
