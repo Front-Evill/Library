@@ -1,3 +1,264 @@
+# Orbs UI Library v1.3
+
+A clean and modern UI library for Roblox executors.
+
+---
+
+## Installation
+
+Paste this at the top of your script to load the library:
+
+```lua
+local OrbsUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Front-Evill/Gui/refs/heads/main/main.lua"))()
+```
+
+---
+
+## Creating a Window
+
+```lua
+local Window = OrbsUI.new({
+    Title       = "Orbs",
+    Description = "By FrontEvill",
+    Theme       = "Purple",
+    MinimizeKey = Enum.KeyCode.RightShift,
+})
+```
+
+| Option | Type | Description |
+|---|---|---|
+| Title | string | The name shown in the top bar |
+| Description | string | Small text shown next to the title |
+| Theme | string | Starting color theme |
+| MinimizeKey | KeyCode | Key to show or hide the window |
+
+Available themes: `Purple`, `Red`, `Cyan`, `Green`, `Gold`, `Orange`, `Pink`, `White`
+
+---
+
+## Adding Tabs
+
+```lua
+local Tab = Window:AddTab({ Name = "Combat", Icon = "combat" })
+```
+
+---
+
+## Adding Sections
+
+Sections group related elements inside a tab.
+
+```lua
+local Section = Tab:AddSection({ Name = "Aimbot" })
+```
+
+---
+
+## Elements
+
+### Toggle
+
+```lua
+Section:AddToggle({
+    Name     = "Aimbot",
+    Default  = false,
+    Icon     = "target",
+    Callback = function(v) end,
+})
+```
+
+| Option | Type | Description |
+|---|---|---|
+| Name | string | Label shown on the toggle |
+| Default | boolean | Starting state |
+| Icon | string | Icon shown on the left |
+| Callback | function | Called with true or false when toggled |
+
+---
+
+### Slider
+
+```lua
+Section:AddSlider({
+    Name     = "FOV",
+    Min      = 10,
+    Max      = 180,
+    Default  = 80,
+    Suffix   = "°",
+    Rounding = 1,
+    Icon     = "zap",
+    Callback = function(v) end,
+})
+```
+
+| Option | Type | Description |
+|---|---|---|
+| Name | string | Label shown on the slider |
+| Min | number | Minimum value |
+| Max | number | Maximum value |
+| Default | number | Starting value |
+| Suffix | string | Text shown after the value |
+| Rounding | number | Step size for snapping |
+| Callback | function | Called with the current value |
+
+---
+
+### Button
+
+```lua
+Section:AddButton({
+    Name     = "Reset Speed",
+    Icon     = "refresh",
+    Confirm  = false,
+    Callback = function() end,
+})
+```
+
+| Option | Type | Description |
+|---|---|---|
+| Name | string | Label on the button |
+| Icon | string | Icon shown on the left |
+| Confirm | boolean | Shows a confirmation dialog before running |
+| Callback | function | Called when the button is clicked |
+
+---
+
+### Input
+
+```lua
+Section:AddInput({
+    Name        = "Display Name",
+    Placeholder = "Enter value...",
+    Numeric     = false,
+    Finished    = false,
+    Icon        = "user",
+    Callback    = function(v) end,
+})
+```
+
+| Option | Type | Description |
+|---|---|---|
+| Name | string | Label shown above the input |
+| Placeholder | string | Hint text inside the box |
+| Numeric | boolean | Only allows numbers when true |
+| Finished | boolean | Fires callback only when enter is pressed |
+| Callback | function | Called with the current text |
+
+---
+
+### Dropdown
+
+```lua
+Section:AddDropdown({
+    Name     = "Target Team",
+    Items    = { "All", "Enemies Only", "Allies Only" },
+    Default  = "All",
+    Multi    = false,
+    Icon     = "search",
+    Callback = function(v) end,
+})
+```
+
+| Option | Type | Description |
+|---|---|---|
+| Name | string | Label shown above the dropdown |
+| Items | table | List of options |
+| Default | string or table | Starting selection |
+| Multi | boolean | Allows selecting multiple items when true |
+| Callback | function | Called with the selected value or table |
+
+---
+
+### Color Picker
+
+```lua
+Section:AddColorPicker({
+    Name     = "Theme Color",
+    Callback = function(themeName, color) end,
+})
+```
+
+The callback receives the theme name as a string and the Color3 value.
+
+---
+
+## Window Methods
+
+### SetTheme
+
+Changes the color theme of the window.
+
+```lua
+Window:SetTheme("Cyan")
+```
+
+---
+
+### SetStatus
+
+Updates the text shown in the bottom status bar.
+
+```lua
+Window:SetStatus("Ready")
+Window:SetStatus("Error occurred", "error")
+Window:SetStatus("Warning", "warn")
+```
+
+---
+
+### Notify
+
+Shows a notification on the right side of the screen.
+
+```lua
+Window:Notify({
+    Title    = "Done",
+    Content  = "Action completed.",
+    Duration = 4,
+})
+```
+
+| Option | Type | Description |
+|---|---|---|
+| Title | string | Bold title of the notification |
+| Content | string | Body text |
+| Duration | number | Seconds before it disappears |
+
+---
+
+## Element Methods
+
+Toggles and sliders return a reference you can use to read or change the value.
+
+```lua
+local MyToggle = Section:AddToggle({ ... })
+MyToggle:Set(true)
+MyToggle:Get()
+
+local MySlider = Section:AddSlider({ ... })
+MySlider:Set(80)
+MySlider:Get()
+```
+
+---
+
+## Available Icons
+
+```
+home, settings, user, sword, eye, zap, shield, star, target, map,
+lock, unlock, bell, trash, edit, check, close, plus, minus,
+arrow_right, arrow_left, arrow_up, arrow_down, refresh, download,
+upload, search, info, warning, danger, heart, chat, camera, music,
+fly, speed, ghost, misc, visual, combat, movement, player, world,
+kill, teleport, signal, save, terminal, play, wrench, run, script,
+money, note, plug, locate, logs, ruler, scroll, phone, aimbot, esp
+```
+
+---
+
+## Full Example
+
+```lua
 local OrbsUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Front-Evill/Gui/refs/heads/main/main.lua"))()
 
 local Window = OrbsUI.new({
@@ -7,213 +268,31 @@ local Window = OrbsUI.new({
     MinimizeKey = Enum.KeyCode.RightShift,
 })
 
-local Combat = Window:AddTab({ Name = "Combat", Icon = "combat" })
+local Tab = Window:AddTab({ Name = "Combat", Icon = "combat" })
 
-Combat:AddLabel({ Text = "Aimbot" })
+local Section = Tab:AddSection({ Name = "Aimbot" })
 
-local Aimbot = Combat:AddToggle({
+Section:AddToggle({
     Name     = "Aimbot",
     Default  = false,
     Icon     = "target",
     Callback = function(v) end,
 })
 
-Combat:AddToggle({
-    Name     = "Silent Aim",
-    Default  = true,
-    Icon     = "eye",
-    Callback = function(v) end,
-})
-
-Combat:AddSlider({
+Section:AddSlider({
     Name     = "FOV",
     Min      = 10,
     Max      = 180,
     Default  = 80,
     Suffix   = "°",
-    Icon     = "zap",
     Callback = function(v) end,
 })
 
-Combat:AddSlider({
-    Name     = "Smoothness",
-    Min      = 1,
-    Max      = 20,
-    Default  = 5,
-    Rounding = 1,
-    Icon     = "signal",
-    Callback = function(v) end,
-})
-
-Combat:AddSeparator()
-Combat:AddLabel({ Text = "ESP" })
-
-Combat:AddToggle({ Name = "Player ESP",  Default = true,  Icon = "user",   Callback = function(v) end })
-Combat:AddToggle({ Name = "Box ESP",     Default = false, Icon = "shield", Callback = function(v) end })
-Combat:AddToggle({ Name = "Health Bar",  Default = true,  Icon = "heart",  Callback = function(v) end })
-
-Combat:AddDropdown({
-    Name     = "Target Team",
-    Items    = { "All", "Enemies Only", "Allies Only" },
-    Default  = "All",
-    Icon     = "search",
-    Callback = function(v) end,
-})
-
-local Movement = Window:AddTab({ Name = "Movement", Icon = "movement" })
-
-Movement:AddLabel({ Text = "Speed" })
-
-local WalkSlider = Movement:AddSlider({
-    Name     = "Walk Speed",
-    Min      = 16,
-    Max      = 250,
-    Default  = 16,
-    Icon     = "speed",
-    Callback = function(v)
-        local char = game.Players.LocalPlayer.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.WalkSpeed = v
-        end
-    end,
-})
-
-local JumpSlider = Movement:AddSlider({
-    Name     = "Jump Power",
-    Min      = 50,
-    Max      = 500,
-    Default  = 50,
-    Icon     = "arrow_up",
-    Callback = function(v)
-        local char = game.Players.LocalPlayer.Character
-        if char and char:FindFirstChild("Humanoid") then
-            char.Humanoid.JumpPower = v
-        end
-    end,
-})
-
-Movement:AddSeparator()
-Movement:AddLabel({ Text = "Abilities" })
-
-Movement:AddToggle({ Name = "Fly",      Default = false, Icon = "fly",        Callback = function(v) end })
-Movement:AddToggle({ Name = "Noclip",   Default = false, Icon = "ghost",      Callback = function(v) end })
-Movement:AddToggle({ Name = "Inf Jump", Default = false, Icon = "star",       Callback = function(v) end })
-Movement:AddToggle({ Name = "Low Grav", Default = false, Icon = "arrow_down", Callback = function(v) end })
-
-Movement:AddButton({
-    Name     = "Reset Speed",
-    Icon     = "refresh",
-    Callback = function()
-        WalkSlider:Set(16)
-        JumpSlider:Set(50)
-    end,
-})
-
-local Visual = Window:AddTab({ Name = "Visual", Icon = "visual" })
-
-Visual:AddColorPicker({
-    Name     = "Theme Color",
-    Callback = function(themeName, _)
-        Window:SetTheme(themeName)
-    end,
-})
-
-Visual:AddSeparator()
-Visual:AddLabel({ Text = "World" })
-
-Visual:AddToggle({
-    Name     = "Fullbright",
-    Default  = false,
-    Icon     = "eye",
-    Callback = function(v)
-        game.Lighting.Brightness = v and 2 or 1
-        game.Lighting.FogEnd     = v and 1e6 or 100000
-    end,
-})
-
-Visual:AddToggle({
-    Name     = "No Fog",
-    Default  = true,
-    Icon     = "map",
-    Callback = function(v)
-        game.Lighting.FogEnd = v and 1e6 or 100000
-    end,
-})
-
-Visual:AddToggle({
-    Name     = "No Shadows",
-    Default  = false,
-    Icon     = "shield",
-    Callback = function(v)
-        game.Lighting.GlobalShadows = not v
-    end,
-})
-
-Visual:AddSlider({
-    Name     = "Field of View",
-    Min      = 70,
-    Max      = 120,
-    Default  = 70,
-    Suffix   = "°",
-    Icon     = "eye",
-    Callback = function(v)
-        workspace.CurrentCamera.FieldOfView = v
-    end,
-})
-
-local Misc = Window:AddTab({ Name = "Misc", Icon = "misc" })
-
-Misc:AddLabel({ Text = "Player" })
-
-Misc:AddInput({
-    Name        = "Display Name",
-    Placeholder = "Enter display name...",
-    Icon        = "user",
-    Callback    = function(v) end,
-})
-
-Misc:AddDropdown({
-    Name     = "Game Mode",
-    Items    = { "Normal", "Competitive", "Sandbox", "Custom" },
-    Default  = "Normal",
-    Icon     = "star",
-    Callback = function(v) end,
-})
-
-Misc:AddSeparator()
-Misc:AddLabel({ Text = "Utility" })
-
-Misc:AddToggle({ Name = "Anti AFK",    Default = true,  Icon = "refresh",     Callback = function(v) end })
-Misc:AddToggle({ Name = "Auto Rejoin", Default = false, Icon = "arrow_right", Callback = function(v) end })
-
-Misc:AddButton({
-    Name     = "Copy Player ID",
-    Icon     = "user",
-    Callback = function()
-        if setclipboard then
-            setclipboard(tostring(game.Players.LocalPlayer.UserId))
-        end
-        Window:Notify({
-            Title    = "Copied",
-            Content  = "Player ID copied to clipboard.",
-            Duration = 3,
-        })
-    end,
-})
-
-Misc:AddButton({
-    Name     = "Rejoin",
-    Icon     = "refresh",
-    Confirm  = true,
-    Callback = function()
-        game:GetService("TeleportService"):Teleport(game.PlaceId, game.Players.LocalPlayer)
-    end,
-})
-
-Window:SetStatus("Orbs loaded successfully")
+Window:SetStatus("Loaded")
 
 Window:Notify({
-    Title    = "Orbs Loaded",
-    Content  = "Welcome, " .. game.Players.LocalPlayer.DisplayName .. "!",
+    Title    = "Welcome",
+    Content  = "UI loaded successfully.",
     Duration = 4,
 })
+```
