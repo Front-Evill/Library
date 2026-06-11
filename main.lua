@@ -1,15 +1,6 @@
 --[[
-    OrbsUI v5.0
+    OrbsUI v5.1  — Fixed
     Usage: local OrbsUI = loadstring(game:HttpGet("RAW_URL"))()
-
-    Window:new({
-        Title       = "Orbs",
-        Description = "By FrontEvill",
-        Icon        = "rbxassetid://...",   -- optional icon next to title
-        Background  = "rbxassetid://...",   -- optional background image
-        Theme       = "Purple",
-        MinimizeKey = Enum.KeyCode.RightShift,
-    })
 ]]
 
 local OrbsUI = {}
@@ -69,30 +60,29 @@ local TH_MAP = {
 }
 
 -- ── Base palette ─────────────────────────────────────────────────
--- All frames use 0.26 global transparency (74% opacity)
-local ALPHA = 0.26   -- window panels transparency
-local BG_ALPHA = 0.27 -- background image transparency
+local ALPHA   = 0.26
+local BG_ALPHA= 0.27
 
 local B = {
-    BG=Color3.fromRGB(13,13,20),   S1=Color3.fromRGB(19,19,30),
-    S2=Color3.fromRGB(25,25,39),   S3=Color3.fromRGB(31,31,48),
-    S4=Color3.fromRGB(37,37,56),   BD=Color3.fromRGB(46,46,70),
-    TX=Color3.fromRGB(224,216,255),TS=Color3.fromRGB(132,120,182),
-    TD=Color3.fromRGB(72,65,112),  W=Color3.fromRGB(255,255,255),
-    CG=Color3.fromRGB(40,202,72),  CR=Color3.fromRGB(232,65,65),
-    CW=Color3.fromRGB(238,160,28),
-    -- Topbar description color: dark grey
-    TDesc=Color3.fromRGB(90,88,105),
+    BG=Color3.fromRGB(13,13,20),    S1=Color3.fromRGB(19,19,30),
+    S2=Color3.fromRGB(25,25,39),    S3=Color3.fromRGB(31,31,48),
+    S4=Color3.fromRGB(37,37,56),    BD=Color3.fromRGB(46,46,70),
+    TX=Color3.fromRGB(224,216,255), TS=Color3.fromRGB(132,120,182),
+    TD=Color3.fromRGB(72,65,112),   W=Color3.fromRGB(255,255,255),
+    CG=Color3.fromRGB(40,202,72),   CR=Color3.fromRGB(232,65,65),
+    CW=Color3.fromRGB(238,160,28),  TDesc=Color3.fromRGB(90,88,105),
 }
 
--- ── Utilities ────────────────────────────────────────────────────
+-- ── Helpers ──────────────────────────────────────────────────────
 local function lc(a,b,t)
     return Color3.new(a.R+(b.R-a.R)*t, a.G+(b.G-a.G)*t, a.B+(b.B-a.B)*t)
 end
 local function tw(o,t,p,s,d)
     TweenSvc:Create(o,TweenInfo.new(t or .18,s or Enum.EasingStyle.Quint,d or Enum.EasingDirection.Out),p):Play()
 end
-local function cr(f,r) local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,r or 8);c.Parent=f;return c end
+local function cr(f,r)
+    local c=Instance.new("UICorner");c.CornerRadius=UDim.new(0,r or 8);c.Parent=f;return c
+end
 local function sk(f,col,th,tr)
     local s=Instance.new("UIStroke");s.ApplyStrokeMode=Enum.ApplyStrokeMode.Border
     s.Color=col or B.BD;s.Thickness=th or 1;s.Transparency=tr or 0;s.Parent=f;return s
@@ -114,18 +104,17 @@ local function hl(f,sp,ha,va)
     l.VerticalAlignment=va or Enum.VerticalAlignment.Center
     l.Padding=UDim.new(0,sp or 0);l.SortOrder=Enum.SortOrder.LayoutOrder;l.Parent=f;return l
 end
--- frame with semi-transparency baked in
-local function fr(p,bg,extra_t)
+-- semi-transparent frame
+local function fr(p,bg,t2)
     local f=Instance.new("Frame");f.BackgroundColor3=bg or B.BG
-    f.BackgroundTransparency=extra_t or ALPHA
-    f.BorderSizePixel=0;f.Parent=p;return f
+    f.BackgroundTransparency=t2 or ALPHA;f.BorderSizePixel=0;f.Parent=p;return f
 end
--- solid frame (no transparency)
+-- solid frame (0 transparency)
 local function frS(p,bg)
     local f=Instance.new("Frame");f.BackgroundColor3=bg or B.BG
     f.BackgroundTransparency=0;f.BorderSizePixel=0;f.Parent=p;return f
 end
--- fully transparent frame (container only)
+-- invisible container frame
 local function frT(p)
     local f=Instance.new("Frame");f.BackgroundTransparency=1
     f.BorderSizePixel=0;f.Parent=p;return f
@@ -134,20 +123,17 @@ local function lb(p,tx,sz,fn,co,xt)
     local l=Instance.new("TextLabel");l.BackgroundTransparency=1;l.Text=tx or ""
     l.TextSize=sz or 13;l.Font=fn or Enum.Font.GothamMedium
     l.TextColor3=co or B.TX;l.TextXAlignment=xt or Enum.TextXAlignment.Left
-    l.BorderSizePixel=0;l.RichText=false;l.Parent=p;return l
+    l.BorderSizePixel=0;l.Parent=p;return l
 end
 local function bt(p)
-    local b=Instance.new("TextButton");b.BackgroundTransparency=1;b.Text=""
-    b.BorderSizePixel=0;b.Parent=p;return b
-end
-local function img2(p,id,sz,co)
-    local i=Instance.new("ImageLabel");i.BackgroundTransparency=1
-    i.Size=UDim2.fromOffset(sz or 14,sz or 14)
-    i.Image=id or "";i.ImageColor3=co or B.TS;i.ScaleType=Enum.ScaleType.Fit
-    i.Parent=p;return i
+    local b=Instance.new("TextButton");b.BackgroundTransparency=1
+    b.Text="";b.BorderSizePixel=0;b.Parent=p;return b
 end
 local function ico(p,name,sz,co)
-    return img2(p, ICO[(name or ""):lower()] or "", sz, co)
+    local i=Instance.new("ImageLabel");i.BackgroundTransparency=1
+    i.Size=UDim2.fromOffset(sz or 14,sz or 14)
+    i.Image=ICO[(name or ""):lower()] or "";i.ImageColor3=co or B.TS
+    i.ScaleType=Enum.ScaleType.Fit;i.Parent=p;return i
 end
 local function fmtT(s)
     local h=math.floor(s/3600);local m=math.floor((s%3600)/60);local sc=math.floor(s%60)
@@ -175,6 +161,9 @@ local function drag(win,handle)
     end)
 end
 
+-- ── FIX 1: Element builders declared as LOCAL upfront ────────────
+local _Toggle, _Slider, _Button, _Input, _Dropdown
+
 -- ── Constructor ──────────────────────────────────────────────────
 function OrbsUI.new(cfg)
     cfg=cfg or {}
@@ -199,7 +188,6 @@ end
 function OrbsUI:_build()
     local TH=self.TH
 
-    -- Screen
     local Gui=Instance.new("ScreenGui")
     Gui.Name="OrbsUI";Gui.ResetOnSpawn=false
     Gui.ZIndexBehavior=Enum.ZIndexBehavior.Sibling;Gui.IgnoreGuiInset=true
@@ -207,65 +195,61 @@ function OrbsUI:_build()
         Gui.Parent=LP:WaitForChild("PlayerGui")
     end
 
-    -- Notif holder
     local NH=frT(Gui)
     NH.Size=UDim2.new(0,308,1,0);NH.Position=UDim2.new(1,-314,0,0);NH.ZIndex=900
-    local nhl=vl(NH,6);nhl.VerticalAlignment=Enum.VerticalAlignment.Bottom
+    local nhl=vl(NH,6)
+    nhl.VerticalAlignment=Enum.VerticalAlignment.Bottom
     nhl.HorizontalAlignment=Enum.HorizontalAlignment.Right
     pd(NH,0,14,0,0)
 
-    -- ── Window ───────────────────────────────────────────────────
-    -- Layout constants (all pixel-based, no fractional sizes)
-    local W   = 580    -- window width
-    local TB_H = 46    -- topbar height
-    local TAB_H = 38   -- tab bar height
-    local D_H  = 1     -- divider height
-    local SB_H = 26    -- status bar height
-    local PC_W = 120   -- player card width
-    local BODY_H = 300 -- content body height
-    -- Total H = TB_H + D_H + TAB_H + D_H + BODY_H + SB_H = 412
+    -- Layout constants
+    local W      = 580
+    local TB_H   = 46
+    local TAB_H  = 38
+    local D_H    = 1
+    local SB_H   = 26
+    local PC_W   = 120
+    local BODY_H = 300
     local H = TB_H + D_H + TAB_H + D_H + BODY_H + SB_H  -- 412
 
+    -- Window root (transparent, just for clipping/sizing)
     local Win=frT(Gui)
     Win.Size=UDim2.fromOffset(W,H);Win.Position=UDim2.fromScale(.5,.5)
     Win.AnchorPoint=Vector2.new(.5,.5);Win.ZIndex=10;Win.ClipsDescendants=true
     cr(Win,12)
 
-    -- Background layer (image + base color)
-    local WinBg=Instance.new("Frame")
-    WinBg.Size=UDim2.fromScale(1,1);WinBg.BackgroundColor3=B.BG
-    WinBg.BackgroundTransparency=ALPHA;WinBg.BorderSizePixel=0;WinBg.ZIndex=10;WinBg.Parent=Win
-    cr(WinBg,12)
+    -- Background layer
+    local WinBg=frS(Win,B.BG)
+    WinBg.BackgroundTransparency=ALPHA
+    WinBg.Size=UDim2.fromScale(1,1);WinBg.ZIndex=10;cr(WinBg,12)
     local winSK=sk(WinBg,lc(TH.A,B.BD,.55),1.5,.25)
 
-    if self.BgId ~= "" then
+    if self.BgId~="" then
         local BgImg=Instance.new("ImageLabel")
         BgImg.Size=UDim2.fromScale(1,1);BgImg.BackgroundTransparency=1
         BgImg.Image=self.BgId;BgImg.ScaleType=Enum.ScaleType.Crop
-        BgImg.ImageTransparency=BG_ALPHA;BgImg.ZIndex=10;BgImg.Parent=WinBg
-        cr(BgImg,12)
+        BgImg.ImageTransparency=BG_ALPHA;BgImg.ZIndex=10;BgImg.Parent=WinBg;cr(BgImg,12)
     end
 
     -- ── TopBar ───────────────────────────────────────────────────
-    -- y=0, h=TB_H
     local TopBar=frT(Win)
     TopBar.Size=UDim2.fromOffset(W,TB_H);TopBar.Position=UDim2.fromOffset(0,0);TopBar.ZIndex=20
 
-    local TopBg=fr(TopBar,lc(TH.A,B.BG,.86))
+    local TopBgCol=lc(TH.A,B.BG,.86)
+    local TopBg=frS(TopBar,TopBgCol)
+    TopBg.BackgroundTransparency=ALPHA
     TopBg.Size=UDim2.fromScale(1,1);TopBg.ZIndex=20;cr(TopBg,12)
-    -- cover bottom corners
-    local TopBgFix=Instance.new("Frame")
-    TopBgFix.Size=UDim2.new(1,0,0,14);TopBgFix.Position=UDim2.new(0,0,1,-14)
-    TopBgFix.BackgroundColor3=lc(TH.A,B.BG,.86);TopBgFix.BackgroundTransparency=ALPHA
-    TopBgFix.BorderSizePixel=0;TopBgFix.ZIndex=20;TopBgFix.Parent=TopBar
+    -- FIX: solid fix for bottom corners, same color + same transparency
+    local TopBgFix=frS(TopBar,TopBgCol)
+    TopBgFix.BackgroundTransparency=ALPHA
+    TopBgFix.Size=UDim2.new(1,0,0,14);TopBgFix.Position=UDim2.new(0,0,1,-14);TopBgFix.ZIndex=21
 
-    -- Divider line at bottom of topbar
-    local TopLine=frT(Win)
-    TopLine.Size=UDim2.fromOffset(W,D_H);TopLine.Position=UDim2.fromOffset(0,TB_H);TopLine.ZIndex=21
-    local TopLineInner=fr(TopLine,lc(TH.A,B.BD,.6),.38)
-    TopLineInner.Size=UDim2.fromScale(1,1);TopLineInner.ZIndex=21
+    -- TopBar bottom divider
+    local TopLineInner=frS(Win,lc(TH.A,B.BD,.6))
+    TopLineInner.BackgroundTransparency=.38
+    TopLineInner.Size=UDim2.fromOffset(W,D_H);TopLineInner.Position=UDim2.fromOffset(0,TB_H);TopLineInner.ZIndex=22
 
-    -- Traffic lights (left side of topbar)
+    -- Traffic lights
     local DotsF=frT(TopBar)
     DotsF.Size=UDim2.fromOffset(58,13);DotsF.Position=UDim2.new(0,14,0.5,-6.5);DotsF.ZIndex=22
     hl(DotsF,6)
@@ -274,71 +258,73 @@ function OrbsUI:_build()
         b.BackgroundColor3=col;b.Text="";b.BorderSizePixel=0;b.ZIndex=23;b.Parent=DotsF;cr(b,7);return b
     end
     local CloseB=wBtn(Color3.fromRGB(255,95,87))
-    local MinB  =wBtn(Color3.fromRGB(254,188,46))
-    wBtn(Color3.fromRGB(40,200,64))
+    -- FIX: MinB is separate hidden button covering the topbar for keyboard shortcut,
+    --      NOT placed over the dots. Traffic dots handle their own close/min/max.
+    wBtn(Color3.fromRGB(254,188,46))  -- minimize dot (purely visual, key shortcut handled by UIS)
+    wBtn(Color3.fromRGB(40,200,64))   -- maximize dot (visual only)
 
-    -- Title area (right side): icon + title + desc on ONE line
+    -- Title row (right-aligned): icon? + title + desc
     local TitleRow=frT(TopBar)
-    -- width: up to 260px, right-aligned with 14px margin
     TitleRow.Size=UDim2.new(0,280,1,0);TitleRow.Position=UDim2.new(1,-292,0,0);TitleRow.ZIndex=22
+    -- Use horizontal list RIGHT-aligned, items ordered: desc, title, icon
     hl(TitleRow,6,Enum.HorizontalAlignment.Right,Enum.VerticalAlignment.Center)
-    pd(TitleRow,0,0,0,0)
 
-    -- desc "by FrontEvill" in dark-grey small font
     local DescL=lb(TitleRow,self.Desc,10,Enum.Font.Gotham,B.TDesc,Enum.TextXAlignment.Right)
     DescL.Size=UDim2.new(0,0,0,13);DescL.AutomaticSize=Enum.AutomaticSize.X;DescL.ZIndex=23
 
-    -- title
     local TitleL=lb(TitleRow,self.Title,14,Enum.Font.GothamBold,TH.AL,Enum.TextXAlignment.Right)
     TitleL.Size=UDim2.new(0,0,0,18);TitleL.AutomaticSize=Enum.AutomaticSize.X;TitleL.ZIndex=23
 
-    -- icon (if provided)
     local IconImg=nil
-    if self.IconId ~= "" then
-        IconImg=img2(TitleRow,self.IconId,22,TH.AL)
-        IconImg.ZIndex=23
+    if self.IconId~="" then
+        IconImg=Instance.new("ImageLabel");IconImg.BackgroundTransparency=1
+        IconImg.Size=UDim2.fromOffset(22,22);IconImg.Image=self.IconId
+        IconImg.ImageColor3=TH.AL;IconImg.ScaleType=Enum.ScaleType.Fit;IconImg.ZIndex=23;IconImg.Parent=TitleRow
     end
 
     -- ── Tab Bar ──────────────────────────────────────────────────
-    -- y = TB_H + D_H = 47, h = TAB_H = 38
-    local TabY = TB_H + D_H
+    local TabY = TB_H + D_H  -- 47
+
     local TabOuter=frT(Win)
-    TabOuter.Size=UDim2.fromOffset(W-24, TAB_H)
-    TabOuter.Position=UDim2.fromOffset(12, TabY)
+    TabOuter.Size=UDim2.fromOffset(W-24,TAB_H)
+    TabOuter.Position=UDim2.fromOffset(12,TabY)
     TabOuter.ClipsDescendants=true;TabOuter.ZIndex=20
 
-    -- The actual tab buttons live in here
     local TBF=frT(TabOuter)
     TBF.Size=UDim2.fromScale(1,1);TBF.ZIndex=20
     hl(TBF,5,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Center)
 
-    -- Divider under tab bar
-    local TabLineY = TabY + TAB_H
-    local TabLine=frT(Win)
-    TabLine.Size=UDim2.fromOffset(W,D_H);TabLine.Position=UDim2.fromOffset(0,TabLineY);TabLine.ZIndex=21
-    local TabLineInner=fr(TabLine,lc(TH.A,B.BD,.6),.38)
-    TabLineInner.Size=UDim2.fromScale(1,1);TabLineInner.ZIndex=21
+    -- Tab bar bottom divider
+    local TabLineY = TabY + TAB_H  -- 85
+    local TabLineInner=frS(Win,lc(TH.A,B.BD,.6))
+    TabLineInner.BackgroundTransparency=.38
+    TabLineInner.Size=UDim2.fromOffset(W,D_H);TabLineInner.Position=UDim2.fromOffset(0,TabLineY);TabLineInner.ZIndex=22
 
     -- ── Body ─────────────────────────────────────────────────────
-    -- y = TabLineY + D_H = 47+38+1 = 86, h = BODY_H = 300
-    local BodyY = TabLineY + D_H
+    local BodyY = TabLineY + D_H  -- 86
+
     local Body=frT(Win)
     Body.Size=UDim2.fromOffset(W,BODY_H);Body.Position=UDim2.fromOffset(0,BodyY)
     Body.ClipsDescendants=true;Body.ZIndex=15
 
-    -- Player card
-    local PC=fr(Body,B.S1)
-    PC.Size=UDim2.fromOffset(PC_W,BODY_H);PC.Position=UDim2.fromOffset(0,0);PC.ZIndex=16;cr(PC,0)
+    -- FIX 2: Player card with proper rounded corners (left side only feels right at 0, right side flush)
+    local PC=frS(Body,B.S1)
+    PC.BackgroundTransparency=ALPHA
+    PC.Size=UDim2.fromOffset(PC_W,BODY_H);PC.ZIndex=16
+    -- No corner radius needed since it's flush on right side; left corners clipped by Win anyway
+    -- But we add a subtle stroke on right only via a separator frame
 
-    -- Right border of player card
-    local PCSep=frT(Body)
+    -- Player card right separator
+    local PCSep=frS(Body,B.BD)
+    PCSep.BackgroundTransparency=.58
     PCSep.Size=UDim2.fromOffset(1,BODY_H-8);PCSep.Position=UDim2.fromOffset(PC_W,4);PCSep.ZIndex=16
-    local PCSepInner=fr(PCSep,B.BD,.62);PCSepInner.Size=UDim2.fromScale(1,1)
 
-    -- Avatar
-    local AvBg=fr(PC,lc(TH.A,B.BG,.84))
+    -- Avatar background
+    local AvBg=frS(PC,lc(TH.A,B.BG,.84))
+    AvBg.BackgroundTransparency=ALPHA
     AvBg.Size=UDim2.fromOffset(60,60);AvBg.Position=UDim2.new(.5,-30,0,14);AvBg.ZIndex=17;cr(AvBg,12)
     local avSK=sk(AvBg,TH.AL,2,.22)
+
     local AvImg=Instance.new("ImageLabel");AvImg.BackgroundTransparency=1
     AvImg.Size=UDim2.fromScale(1,1);AvImg.ScaleType=Enum.ScaleType.Fit
     AvImg.ZIndex=18;AvImg.Parent=AvBg;cr(AvImg,11)
@@ -349,39 +335,41 @@ function OrbsUI:_build()
         if ok then AvImg.Image=url end
     end)
 
-    -- Display name
     local NameL=lb(PC,LP.DisplayName,12,Enum.Font.GothamBold,B.TX,Enum.TextXAlignment.Center)
     NameL.Size=UDim2.new(1,-8,0,15);NameL.Position=UDim2.new(0,4,0,80)
     NameL.TextTruncate=Enum.TextTruncate.AtEnd;NameL.ZIndex=17
 
-    -- Username
     local UserL=lb(PC,"@"..LP.Name,9,Enum.Font.Gotham,B.TS,Enum.TextXAlignment.Center)
     UserL.Size=UDim2.new(1,-8,0,13);UserL.Position=UDim2.new(0,4,0,96)
     UserL.TextTruncate=Enum.TextTruncate.AtEnd;UserL.ZIndex=17
 
-    -- Separator
-    local PCsep2=frT(PC)
+    -- Separator line
+    local PCsep2=frS(PC,B.BD)
+    PCsep2.BackgroundTransparency=.6
     PCsep2.Size=UDim2.new(1,-20,0,1);PCsep2.Position=UDim2.new(0,10,0,116);PCsep2.ZIndex=17
-    local PCsep2i=fr(PCsep2,B.BD,.6);PCsep2i.Size=UDim2.fromScale(1,1)
 
-    -- Age
     local AgeL=lb(PC,LP.AccountAge.."d old",9,Enum.Font.Gotham,B.TD,Enum.TextXAlignment.Center)
     AgeL.Size=UDim2.new(1,-8,0,12);AgeL.Position=UDim2.new(0,4,0,124);AgeL.ZIndex=17
 
-    -- Main panel
+    -- Main panel (right of player card)
     local MP=frT(Body)
     MP.Size=UDim2.new(1,-(PC_W+8),1,0);MP.Position=UDim2.fromOffset(PC_W+8,0)
     MP.ClipsDescendants=true;MP.ZIndex=15
 
     -- ── Status bar ───────────────────────────────────────────────
-    local SbY = BodyY + BODY_H
+    local SbY = BodyY + BODY_H  -- 386
+
     local SBar=frT(Win)
     SBar.Size=UDim2.fromOffset(W,SB_H);SBar.Position=UDim2.fromOffset(0,SbY);SBar.ZIndex=20
 
-    local SBg=fr(SBar,B.S1)
+    -- FIX 3: Status bar bg uses frS (solid) not fr (semi-transparent) to avoid double-alpha on fix frame
+    local SBg=frS(SBar,B.S1)
+    SBg.BackgroundTransparency=ALPHA
     SBg.Size=UDim2.fromScale(1,1);SBg.ZIndex=20;cr(SBg,12)
-    local SBgFix=fr(SBar,B.S1)
-    SBgFix.Size=UDim2.new(1,0,0.5,0);SBgFix.ZIndex=20
+    -- FIX: Fix frame must be EXACTLY same color+transparency as SBg
+    local SBgFix=frS(SBar,B.S1)
+    SBgFix.BackgroundTransparency=ALPHA
+    SBgFix.Size=UDim2.new(1,0,.5,0);SBgFix.ZIndex=20
 
     local SSDot=frS(SBar,B.CG)
     SSDot.Size=UDim2.fromOffset(7,7);SSDot.Position=UDim2.new(0,12,0.5,-3.5);SSDot.ZIndex=22;cr(SSDot,4)
@@ -389,7 +377,7 @@ function OrbsUI:_build()
     local UptL=lb(SBar,"00:00",10,Enum.Font.GothamMedium,lc(TH.A,B.TD,.5),Enum.TextXAlignment.Left)
     UptL.Size=UDim2.new(0,70,1,0);UptL.Position=UDim2.fromOffset(24,0);UptL.ZIndex=22
 
-    local StTxt=lb(SBar,"Connected — Orbs v5.0",10,Enum.Font.Gotham,B.TD,Enum.TextXAlignment.Left)
+    local StTxt=lb(SBar,"Connected — Orbs v5.1",10,Enum.Font.Gotham,B.TD,Enum.TextXAlignment.Left)
     StTxt.Size=UDim2.new(1,-110,1,0);StTxt.Position=UDim2.fromOffset(100,0);StTxt.ZIndex=22
 
     -- ── Float button ─────────────────────────────────────────────
@@ -402,8 +390,8 @@ function OrbsUI:_build()
     local FBC=bt(FB);FBC.Size=UDim2.fromScale(1,1);FBC.ZIndex=102
 
     -- ── Controls ─────────────────────────────────────────────────
-    drag(Win, TopBar)
-    drag(FB, FB)
+    drag(Win,TopBar)
+    drag(FB,FB)
 
     local function hideWin()
         tw(Win,.22,{Size=UDim2.fromOffset(0,0)},Enum.EasingStyle.Quint)
@@ -418,21 +406,19 @@ function OrbsUI:_build()
         tw(Win,.2,{Size=UDim2.fromOffset(0,0)},Enum.EasingStyle.Quint)
         task.wait(.21);Gui:Destroy()
     end)
-    MinB.MouseButton1Click:Connect(function() task.spawn(hideWin) end)
-    FBC.MouseButton1Click:Connect(function() task.spawn(showWin) end)
+    -- FIX 4: Minimize key handled cleanly via UIS only, no extra invisible button
     UIS.InputBegan:Connect(function(i,gp)
         if not gp and i.KeyCode==self.MinKey then
             if Win.Visible then task.spawn(hideWin) else task.spawn(showWin) end
         end
     end)
+    FBC.MouseButton1Click:Connect(function() task.spawn(showWin) end)
 
     local tc=RunSvc.Heartbeat:Connect(function() UptL.Text=fmtT(tick()-self._t0) end)
 
-    -- Store refs
     self._gui  = Gui
     self._win  = Win
-    self._W    = W
-    self._H    = H
+    self._W    = W;self._H = H
     self._MP   = MP
     self._TBF  = TBF
     self._StTxt= StTxt
@@ -451,28 +437,28 @@ end
 
 -- ── SetTheme ─────────────────────────────────────────────────────
 function OrbsUI:SetTheme(name)
-    local TH=TH_MAP[name]; if not TH then return end
-    self.TH=TH; self.ThemeName=name
+    local TH=TH_MAP[name];if not TH then return end
+    self.TH=TH;self.ThemeName=name
     local r=self._refs
-    tw(r.winSK,      .25,{Color=lc(TH.A,B.BD,.55)})
-    tw(r.WinBg,      .25,{BackgroundColor3=B.BG})
-    tw(r.TopBg,      .25,{BackgroundColor3=lc(TH.A,B.BG,.86)})
-    tw(r.TopBgFix,   .25,{BackgroundColor3=lc(TH.A,B.BG,.86)})
+    local topCol=lc(TH.A,B.BG,.86)
+    tw(r.winSK,       .25,{Color=lc(TH.A,B.BD,.55)})
+    tw(r.TopBg,       .25,{BackgroundColor3=topCol})
+    tw(r.TopBgFix,    .25,{BackgroundColor3=topCol})
     tw(r.TopLineInner,.25,{BackgroundColor3=lc(TH.A,B.BD,.6)})
     tw(r.TabLineInner,.25,{BackgroundColor3=lc(TH.A,B.BD,.6)})
-    tw(r.TitleL,     .25,{TextColor3=TH.AL})
-    tw(r.avSK,       .25,{Color=TH.AL})
-    tw(r.AvBg,       .25,{BackgroundColor3=lc(TH.A,B.BG,.84)})
-    tw(r.FB,         .25,{BackgroundColor3=TH.A})
-    tw(r.fbSK,       .25,{Color=TH.AL})
-    tw(r.UptL,       .25,{TextColor3=lc(TH.A,B.TD,.5)})
+    tw(r.TitleL,      .25,{TextColor3=TH.AL})
+    tw(r.avSK,        .25,{Color=TH.AL})
+    tw(r.AvBg,        .25,{BackgroundColor3=lc(TH.A,B.BG,.84)})
+    tw(r.FB,          .25,{BackgroundColor3=TH.A})
+    tw(r.fbSK,        .25,{Color=TH.AL})
+    tw(r.UptL,        .25,{TextColor3=lc(TH.A,B.TD,.5)})
     if r.IconImg then tw(r.IconImg,.25,{ImageColor3=TH.AL}) end
     for _,t in ipairs(self.Tabs) do
         if t._dline then tw(t._dline,.25,{BackgroundColor3=TH.A}) end
         if t==self.ActiveTab then
             tw(t._btn,.25,{BackgroundColor3=lc(TH.A,B.S2,.78)})
-            if t._tl then tw(t._tl,.25,{TextColor3=TH.AL}) end
-            if t._ic then tw(t._ic,.25,{ImageColor3=TH.AL}) end
+            if t._tl   then tw(t._tl,  .25,{TextColor3=TH.AL}) end
+            if t._ic   then tw(t._ic,  .25,{ImageColor3=TH.AL}) end
             if t._dline then tw(t._dline,.25,{BackgroundTransparency=0}) end
         end
         if t._acBar then tw(t._acBar,.25,{BackgroundColor3=TH.A}) end
@@ -482,8 +468,7 @@ end
 -- ── SetStatus ────────────────────────────────────────────────────
 function OrbsUI:SetStatus(text,kind)
     self._StTxt.Text=text or "Ready"
-    local col=kind=="error" and B.CR or kind=="warn" and B.CW or B.CG
-    tw(self._SSDot,.2,{BackgroundColor3=col})
+    tw(self._SSDot,.2,{BackgroundColor3=kind=="error" and B.CR or kind=="warn" and B.CW or B.CG})
 end
 
 -- ── Notify ───────────────────────────────────────────────────────
@@ -503,12 +488,14 @@ function OrbsUI:Notify(cfg)
     local NT=lb(NF,title,13,Enum.Font.GothamBold,B.TX);NT.Size=UDim2.new(1,-56,0,17);NT.Position=UDim2.fromOffset(19,10);NT.ZIndex=902
     local NC=lb(NF,body,11,Enum.Font.Gotham,B.TS);NC.Size=UDim2.new(1,-56,0,24);NC.Position=UDim2.fromOffset(19,29)
     NC.TextWrapped=true;NC.TextTruncate=Enum.TextTruncate.AtEnd;NC.ZIndex=902
+
     local NX=frS(NF,B.S3);NX.Size=UDim2.fromOffset(20,20);NX.Position=UDim2.new(1,-28,0,8);NX.ZIndex=902;cr(NX,6)
     local NXL=lb(NX,"✕",10,Enum.Font.GothamBold,B.TS,Enum.TextXAlignment.Center)
     NXL.Size=UDim2.fromScale(1,1);NXL.TextYAlignment=Enum.TextYAlignment.Center;NXL.ZIndex=903
     local NXB=bt(NX);NXB.Size=UDim2.fromScale(1,1);NXB.ZIndex=904
     NXB.MouseEnter:Connect(function() tw(NX,.1,{BackgroundColor3=B.CR});tw(NXL,.1,{TextColor3=B.W}) end)
     NXB.MouseLeave:Connect(function() tw(NX,.1,{BackgroundColor3=B.S3});tw(NXL,.1,{TextColor3=B.TS}) end)
+
     tw(NF,.3,{Position=UDim2.new(0,0,0,0)},Enum.EasingStyle.Back)
     local gone=false
     local function dismiss()
@@ -523,28 +510,28 @@ function OrbsUI:Notify(cfg)
     if dur>0 then task.spawn(function() task.wait(dur+.3);dismiss() end) end
 end
 
--- ── Tab switching ────────────────────────────────────────────────
+-- ── _selectTab ───────────────────────────────────────────────────
 function OrbsUI:_selectTab(td)
     if self._busy or self.ActiveTab==td then return end
     self._busy=true
     local TH=self.TH
     local prev=self.ActiveTab
-    -- deactivate all
     for _,t in ipairs(self.Tabs) do
-        if t._tl  then tw(t._tl, .15,{TextColor3=B.TS}) end
-        if t._ic  then tw(t._ic, .15,{ImageColor3=B.TD}) end
+        if t._tl   then tw(t._tl,  .15,{TextColor3=B.TS}) end
+        if t._ic   then tw(t._ic,  .15,{ImageColor3=B.TD}) end
         if t._dline then tw(t._dline,.15,{BackgroundTransparency=1}) end
         tw(t._btn,.15,{BackgroundTransparency=1,BackgroundColor3=B.S2})
     end
-    -- activate
     tw(td._btn,.15,{BackgroundColor3=lc(TH.A,B.S2,.78),BackgroundTransparency=ALPHA})
-    if td._tl  then tw(td._tl, .15,{TextColor3=TH.AL}) end
-    if td._ic  then tw(td._ic, .15,{ImageColor3=TH.AL}) end
+    if td._tl   then tw(td._tl,  .15,{TextColor3=TH.AL}) end
+    if td._ic   then tw(td._ic,  .15,{ImageColor3=TH.AL}) end
     if td._dline then tw(td._dline,.15,{BackgroundTransparency=0}) end
-    -- slide pages
+    -- slide animation
     if prev and prev._sc then
         tw(prev._sc,.16,{Position=UDim2.new(-.06,0,0,0)},Enum.EasingStyle.Quint)
-        task.delay(.17,function() prev._sc.Visible=false;prev._sc.Position=UDim2.fromScale(0,0) end)
+        task.delay(.17,function()
+            if prev._sc then prev._sc.Visible=false;prev._sc.Position=UDim2.fromScale(0,0) end
+        end)
     end
     td._sc.Position=UDim2.new(.06,0,0,0);td._sc.Visible=true
     tw(td._sc,.2,{Position=UDim2.fromScale(0,0)},Enum.EasingStyle.Quint)
@@ -559,17 +546,17 @@ function OrbsUI:AddTab(cfg)
     local icn =cfg.Icon
     local TH  =self.TH
 
-    -- Tab button: fixed height = TAB_H, auto width
+    -- FIX 5: Tab button — remove AnchorPoint trick, use proper Size+Position
+    -- The HList in TBF handles vertical centering via VerticalAlignment.Center
     local Btn=Instance.new("TextButton")
     Btn.AutomaticSize=Enum.AutomaticSize.X
-    Btn.Size=UDim2.new(0,0,1,-6)   -- full height minus 6px (3px top+bottom margin)
-    Btn.AnchorPoint=Vector2.new(0,.5)
-    Btn.BackgroundColor3=B.S2
-    Btn.BackgroundTransparency=1
+    -- Height = TAB_H - 8 (4px top + 4px bottom margin), centered by HList
+    Btn.Size=UDim2.new(0,0,1,-8)
+    Btn.BackgroundColor3=B.S2;Btn.BackgroundTransparency=1
     Btn.Text="";Btn.BorderSizePixel=0;Btn.ZIndex=22
     Btn.Parent=self._TBF
     cr(Btn,6)
-    pd(Btn,0,0,icn and 10 or 12, 12)
+    pd(Btn,0,0,icn and 10 or 12,12)
     hl(Btn,5,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Center)
 
     local bIc=nil
@@ -578,12 +565,12 @@ function OrbsUI:AddTab(cfg)
     local bTl=lb(Btn,name,12,Enum.Font.GothamSemibold,B.TS)
     bTl.AutomaticSize=Enum.AutomaticSize.X;bTl.Size=UDim2.new(0,0,1,0);bTl.ZIndex=23
 
-    -- bottom highlight line
+    -- Active indicator line at bottom of button
     local dline=frS(Btn,TH.A)
     dline.BackgroundTransparency=1
     dline.Size=UDim2.new(1,-4,0,2);dline.Position=UDim2.new(0,2,1,-2);dline.ZIndex=24;cr(dline,1)
 
-    -- ScrollingFrame for this tab's content
+    -- ScrollingFrame for page content
     local SC=Instance.new("ScrollingFrame")
     SC.BackgroundTransparency=1;SC.BorderSizePixel=0
     SC.Size=UDim2.fromScale(1,1)
@@ -603,6 +590,7 @@ function OrbsUI:AddTab(cfg)
         if self.ActiveTab~=td then tw(Btn,.1,{BackgroundTransparency=1}) end
     end)
 
+    -- Auto-select first tab
     if #self.Tabs==1 then
         Btn.BackgroundColor3=lc(TH.A,B.S2,.78);Btn.BackgroundTransparency=ALPHA
         bTl.TextColor3=TH.AL;if bIc then bIc.ImageColor3=TH.AL end
@@ -610,21 +598,18 @@ function OrbsUI:AddTab(cfg)
     end
 
     local selfRef=self
-
-    -- helper: make a content element frame
     local function mkF(h,parent)
         local f=frS(parent or SC,B.S2)
         f.BackgroundTransparency=ALPHA
         f.Size=UDim2.new(1,-2,0,h);cr(f,8);sk(f,B.BD,1,.62);return f
     end
 
-    -- ── AddSection ───────────────────────────────────────────────
     local tabAPI={}
 
+    -- ── AddSection ───────────────────────────────────────────────
     function tabAPI:AddSection(o)
         o=o or {}
         local secName=o.Name or "Section"
-        local TH2=selfRef.TH
 
         local SF=frS(SC,B.S1)
         SF.BackgroundTransparency=ALPHA+.05
@@ -632,18 +617,20 @@ function OrbsUI:AddTab(cfg)
         cr(SF,10);sk(SF,B.BD,1,.5)
 
         local SH=frT(SF);SH.Size=UDim2.new(1,0,0,34)
-        pd(SH,0,0,12,12);hl(SH,8,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Center)
+        pd(SH,0,0,12,12)
+        hl(SH,8,Enum.HorizontalAlignment.Left,Enum.VerticalAlignment.Center)
 
-        local SBar=frS(SH,TH2.A);SBar.Size=UDim2.fromOffset(3,14);cr(SBar,2)
-        td._acBar=SBar
+        local SBarAccent=frS(SH,selfRef.TH.A);SBarAccent.Size=UDim2.fromOffset(3,14);cr(SBarAccent,2)
+        td._acBar=SBarAccent
 
         local STL=lb(SH,secName,12,Enum.Font.GothamBold,B.TX);STL.Size=UDim2.new(1,-28,1,0)
 
-        local SDv=frT(SF);SDv.Size=UDim2.new(1,-22,0,1);SDv.Position=UDim2.fromOffset(11,34)
-        local SDvi=frS(SDv,B.BD);SDvi.BackgroundTransparency=.6;SDvi.Size=UDim2.fromScale(1,1)
+        local SDv=frS(SF,B.BD);SDv.BackgroundTransparency=.6
+        SDv.Size=UDim2.new(1,-22,0,1);SDv.Position=UDim2.fromOffset(11,34)
 
-        local SC2=frT(SF);SC2.Size=UDim2.new(1,-22,0,0)
-        SC2.Position=UDim2.fromOffset(11,42);SC2.AutomaticSize=Enum.AutomaticSize.Y;vl(SC2,5)
+        local SC2=frT(SF)
+        SC2.Size=UDim2.new(1,-22,0,0);SC2.Position=UDim2.fromOffset(11,42)
+        SC2.AutomaticSize=Enum.AutomaticSize.Y;vl(SC2,5)
 
         local bot=Instance.new("UIPadding");bot.PaddingBottom=UDim.new(0,10);bot.Parent=SF
 
@@ -653,11 +640,11 @@ function OrbsUI:AddTab(cfg)
         end
 
         local secAPI={}
-        function secAPI:AddToggle(o2)   return _Toggle(smk,o2,selfRef.TH) end
-        function secAPI:AddSlider(o2)   return _Slider(smk,o2,selfRef.TH) end
-        function secAPI:AddButton(o2)   return _Button(smk,o2,selfRef.TH,selfRef._gui) end
-        function secAPI:AddInput(o2)    return _Input(smk,o2,selfRef.TH) end
-        function secAPI:AddDropdown(o2) return _Dropdown(SC2,o2,selfRef.TH) end
+        function secAPI:AddToggle(o2)    return _Toggle(smk,o2,selfRef.TH) end
+        function secAPI:AddSlider(o2)    return _Slider(smk,o2,selfRef.TH) end
+        function secAPI:AddButton(o2)    return _Button(smk,o2,selfRef.TH,selfRef._gui) end
+        function secAPI:AddInput(o2)     return _Input(smk,o2,selfRef.TH) end
+        function secAPI:AddDropdown(o2)  return _Dropdown(SC2,o2,selfRef.TH) end
         function secAPI:AddParagraph(o2)
             o2=o2 or {}
             local PF=frS(SC2,B.S2);PF.BackgroundTransparency=ALPHA
@@ -679,20 +666,27 @@ function OrbsUI:AddTab(cfg)
     function tabAPI:AddButton(o)   return _Button(function(h) return mkF(h) end, o, selfRef.TH, selfRef._gui) end
     function tabAPI:AddInput(o)    return _Input(function(h) return mkF(h) end, o, selfRef.TH) end
     function tabAPI:AddDropdown(o) return _Dropdown(SC, o, selfRef.TH) end
+
     function tabAPI:AddLabel(o)
         o=o or {}
         local l=lb(SC,(o.Text or ""):upper(),10,Enum.Font.GothamBold,B.TD)
         l.Size=UDim2.new(1,-2,0,18);l.LetterSpacing=1
         local a={};function a:Set(t) l.Text=t end;return a
     end
+
+    -- FIX 6: ColorPicker selects correct swatch based on current theme
     function tabAPI:AddColorPicker(o)
         o=o or {}
         local cb=o.Callback or function() end
         local cols={
-            {n="Purple",c=Color3.fromRGB(128,82,232)},{n="Red",   c=Color3.fromRGB(222,62,62)},
-            {n="Cyan",  c=Color3.fromRGB(32,182,222)},{n="Green", c=Color3.fromRGB(42,182,102)},
-            {n="Gold",  c=Color3.fromRGB(212,162,30)},{n="Orange",c=Color3.fromRGB(222,112,30)},
-            {n="Pink",  c=Color3.fromRGB(202,52,162)},{n="White", c=Color3.fromRGB(202,202,212)},
+            {n="Purple",c=Color3.fromRGB(128,82,232)},
+            {n="Red",   c=Color3.fromRGB(222,62,62)},
+            {n="Cyan",  c=Color3.fromRGB(32,182,222)},
+            {n="Green", c=Color3.fromRGB(42,182,102)},
+            {n="Gold",  c=Color3.fromRGB(212,162,30)},
+            {n="Orange",c=Color3.fromRGB(222,112,30)},
+            {n="Pink",  c=Color3.fromRGB(202,52,162)},
+            {n="White", c=Color3.fromRGB(202,202,212)},
         }
         local RF=mkF(58)
         local HL=lb(RF,(o.Name or "Color"):upper(),10,Enum.Font.GothamBold,B.TD)
@@ -700,17 +694,20 @@ function OrbsUI:AddTab(cfg)
         local SR=frT(RF);SR.Size=UDim2.new(1,-20,0,22);SR.Position=UDim2.fromOffset(10,29)
         hl(SR,7)
         local sw={}
+        local curTheme=selfRef.ThemeName
         for i,c in ipairs(cols) do
             local s=Instance.new("TextButton");s.Size=UDim2.fromOffset(20,20)
             s.BackgroundColor3=c.c;s.Text="";s.BorderSizePixel=0;s.ZIndex=17;s.Parent=SR;cr(s,5)
-            local ss=sk(s,B.W,2,i==1 and 0 or 1)
-            table.insert(sw,{b=s,s=ss})
+            -- FIX: highlight whichever matches current theme
+            local ss=sk(s,B.W,2,c.n==curTheme and 0 or 1)
+            table.insert(sw,{b=s,s=ss,n=c.n})
             s.MouseButton1Click:Connect(function()
                 for _,x in ipairs(sw) do x.s.Transparency=1 end
                 ss.Transparency=0;cb(c.n,c.c)
             end)
         end
     end
+
     function tabAPI:AddSeparator()
         local s=frT(SC);s.Size=UDim2.new(1,-2,0,1)
         local si=frS(s,B.BD);si.BackgroundTransparency=.65;si.Size=UDim2.fromScale(1,1)
@@ -719,26 +716,32 @@ function OrbsUI:AddTab(cfg)
     return tabAPI
 end
 
--- ── Element builders ─────────────────────────────────────────────
-function _Toggle(mkF, o, TH)
+-- ── Element builders (local, not global) ─────────────────────────
+
+_Toggle = function(mkF, o, TH)
     o=o or {}
     local name=o.Name or "Toggle";local desc=o.Description or ""
     local def=o.Default or false;local icn=o.Icon;local cb=o.Callback or function() end
     local state=def;local H=desc~="" and 54 or 36
 
     local F=mkF(H)
-    if icn then local i=ico(F,icn,14,B.TS);i.Position=UDim2.fromOffset(10,H/2-7) end
+    if icn then
+        local i=ico(F,icn,14,B.TS);i.Position=UDim2.fromOffset(10,H/2-7)
+    end
     local TL=lb(F,name,12,Enum.Font.GothamSemibold,B.TX)
-    TL.Size=UDim2.new(1,-(icn and 72 or 54),0,15);TL.Position=UDim2.fromOffset(icn and 30 or 12,desc~="" and 9 or 10)
+    TL.Size=UDim2.new(1,-(icn and 72 or 54),0,15)
+    TL.Position=UDim2.fromOffset(icn and 30 or 12,desc~="" and 9 or 10)
     if desc~="" then
         local DL=lb(F,desc,10,Enum.Font.Gotham,B.TS)
-        DL.Size=UDim2.new(1,-(icn and 72 or 54),0,13);DL.Position=UDim2.fromOffset(icn and 30 or 12,26)
+        DL.Size=UDim2.new(1,-(icn and 72 or 54),0,13)
+        DL.Position=UDim2.fromOffset(icn and 30 or 12,26)
         DL.TextTruncate=Enum.TextTruncate.AtEnd
     end
     local Tr=frS(F,state and TH.A or B.S4)
     Tr.Size=UDim2.fromOffset(34,18);Tr.Position=UDim2.new(1,-42,0.5,-9);cr(Tr,9)
     local TrSK=sk(Tr,state and TH.AL or B.BD,1,.5)
-    local Kn=frS(Tr,B.W);Kn.Size=UDim2.fromOffset(12,12);Kn.Position=UDim2.fromOffset(state and 19 or 3,3);cr(Kn,6)
+    local Kn=frS(Tr,B.W)
+    Kn.Size=UDim2.fromOffset(12,12);Kn.Position=UDim2.fromOffset(state and 19 or 3,3);cr(Kn,6)
     local C2=bt(F);C2.Size=UDim2.fromScale(1,1)
     local function set(v)
         state=v
@@ -754,7 +757,7 @@ function _Toggle(mkF, o, TH)
     local a={};function a:Set(v) set(v) end;function a:Get() return state end;return a
 end
 
-function _Slider(mkF, o, TH)
+_Slider = function(mkF, o, TH)
     o=o or {}
     local name=o.Name or "Slider";local desc=o.Description or ""
     local mn=o.Min or 0;local mx=o.Max or 100;local def=o.Default or mn
@@ -810,7 +813,7 @@ function _Slider(mkF, o, TH)
     local a={};function a:Set(v) set(v) end;function a:Get() return val end;return a
 end
 
-function _Button(mkF, o, TH, gui)
+_Button = function(mkF, o, TH, gui)
     o=o or {}
     local name=o.Name or "Button";local desc=o.Description or ""
     local icn=o.Icon;local conf=o.Confirm or false;local cb=o.Callback or function() end
@@ -819,10 +822,12 @@ function _Button(mkF, o, TH, gui)
     local F=mkF(H)
     if icn then local i=ico(F,icn,14,B.TS);i.Position=UDim2.fromOffset(10,H/2-7) end
     local TL=lb(F,name,12,Enum.Font.GothamSemibold,B.TX)
-    TL.Size=UDim2.new(1,-(icn and 72 or 52),0,15);TL.Position=UDim2.fromOffset(icn and 30 or 12,desc~="" and 9 or 10)
+    TL.Size=UDim2.new(1,-(icn and 72 or 52),0,15)
+    TL.Position=UDim2.fromOffset(icn and 30 or 12,desc~="" and 9 or 10)
     if desc~="" then
         local DL=lb(F,desc,10,Enum.Font.Gotham,B.TS)
-        DL.Size=UDim2.new(1,-(icn and 72 or 52),0,13);DL.Position=UDim2.fromOffset(icn and 30 or 12,26)
+        DL.Size=UDim2.new(1,-(icn and 72 or 52),0,13)
+        DL.Position=UDim2.fromOffset(icn and 30 or 12,26)
         DL.TextTruncate=Enum.TextTruncate.AtEnd
     end
     local Ar=frS(F,TH.A);Ar.BackgroundTransparency=.82
@@ -834,8 +839,8 @@ function _Button(mkF, o, TH, gui)
     C2.MouseLeave:Connect(function() tw(F,.1,{BackgroundColor3=B.S2});tw(TL,.1,{TextColor3=B.TX});tw(Ar,.1,{BackgroundTransparency=.82}) end)
 
     local function doConf(cb2)
-        local OV=Instance.new("Frame");OV.BackgroundColor3=Color3.new();OV.BackgroundTransparency=.55
-        OV.Size=UDim2.fromScale(1,1);OV.BorderSizePixel=0;OV.ZIndex=500;OV.Parent=gui
+        local OV=Instance.new("Frame");OV.BackgroundColor3=Color3.new()
+        OV.BackgroundTransparency=.55;OV.Size=UDim2.fromScale(1,1);OV.BorderSizePixel=0;OV.ZIndex=500;OV.Parent=gui
         local DF=frS(gui,B.S2);DF.Size=UDim2.fromOffset(0,0);DF.Position=UDim2.fromScale(.5,.5)
         DF.AnchorPoint=Vector2.new(.5,.5);DF.ZIndex=501;cr(DF,12);sk(DF,B.BD,1,.32)
         tw(DF,.28,{Size=UDim2.fromOffset(304,120)},Enum.EasingStyle.Back)
@@ -865,7 +870,7 @@ function _Button(mkF, o, TH, gui)
     local a={};function a:SetText(t) TL.Text=t end;return a
 end
 
-function _Input(mkF, o, TH)
+_Input = function(mkF, o, TH)
     o=o or {}
     local name=o.Name or "Input";local desc=o.Description or ""
     local def=o.Default or "";local ph=o.Placeholder or "Enter value..."
@@ -879,7 +884,8 @@ function _Input(mkF, o, TH)
     TL.Size=UDim2.new(1,-24,0,15);TL.Position=UDim2.fromOffset(icn and 30 or 12,desc~="" and 8 or 6)
     if desc~="" then
         local DL=lb(F,desc,10,Enum.Font.Gotham,B.TS)
-        DL.Size=UDim2.new(1,-24,0,13);DL.Position=UDim2.fromOffset(12,24);DL.TextTruncate=Enum.TextTruncate.AtEnd
+        DL.Size=UDim2.new(1,-24,0,13);DL.Position=UDim2.fromOffset(12,24)
+        DL.TextTruncate=Enum.TextTruncate.AtEnd
     end
     local IB=Instance.new("TextBox");IB.BackgroundColor3=B.S3;IB.BackgroundTransparency=.1;IB.BorderSizePixel=0
     IB.Size=UDim2.new(1,-22,0,24);IB.Position=UDim2.fromOffset(11,desc~="" and 42 or 24)
@@ -903,7 +909,7 @@ function _Input(mkF, o, TH)
     local a={};function a:Set(v) IB.Text=tostring(v);val=tostring(v) end;function a:Get() return val end;return a
 end
 
-function _Dropdown(parent, o, TH)
+_Dropdown = function(parent, o, TH)
     o=o or {}
     local name=o.Name or "Dropdown";local desc=o.Description or ""
     local items=o.Items or {};local multi=o.Multi or false
@@ -936,7 +942,8 @@ function _Dropdown(parent, o, TH)
     local DC=bt(F);DC.Size=UDim2.new(1,0,0,H)
 
     local function updL()
-        if multi then local s={};for v,on in pairs(sel) do if on then table.insert(s,v) end end
+        if multi then
+            local s={};for v,on in pairs(sel) do if on then table.insert(s,v) end end
             VL.Text=#s==0 and "None" or(#s==1 and s[1] or s[1].." +"..#s-1)
         else VL.Text=sel~="" and sel or "None" end
     end
@@ -961,11 +968,16 @@ function _Dropdown(parent, o, TH)
             OB.MouseButton1Click:Connect(function()
                 if multi then
                     sel[v]=not sel[v];tw(OL,.1,{TextColor3=sel[v] and TH.AL or B.TS})
-                    updL();local s={};for sv,on in pairs(sel) do if on then table.insert(s,sv) end end;task.spawn(cb,s)
+                    updL()
+                    local s={};for sv,on in pairs(sel) do if on then table.insert(s,sv) end end
+                    task.spawn(cb,s)
                 else
                     sel=v
                     for _,c2 in ipairs(DSc:GetChildren()) do
-                        if c2:IsA("Frame") then local l2=c2:FindFirstChildOfClass("TextLabel");if l2 then l2.TextColor3=B.TS end end
+                        if c2:IsA("Frame") then
+                            local l2=c2:FindFirstChildOfClass("TextLabel")
+                            if l2 then l2.TextColor3=B.TS end
+                        end
                     end
                     tw(OL,.1,{TextColor3=TH.AL});updL();togO();task.spawn(cb,v)
                 end
@@ -975,16 +987,20 @@ function _Dropdown(parent, o, TH)
     buildI();updL()
     local a={}
     function a:Set(v)
-        if multi then sel={};if type(v)=="table" then for _,sv in pairs(v) do sel[sv]=true end end
+        if multi then
+            sel={};if type(v)=="table" then for _,sv in pairs(v) do sel[sv]=true end end
         else sel=v end;buildI();updL()
     end
     function a:SetItems(vals) items=vals;buildI();updL() end
     function a:Get()
-        if multi then local s={};for sv,on in pairs(sel) do if on then table.insert(s,sv) end end;return s end;return sel
+        if multi then
+            local s={};for sv,on in pairs(sel) do if on then table.insert(s,sv) end end;return s
+        end;return sel
     end
     return a
 end
 
+-- ── Misc ─────────────────────────────────────────────────────────
 function OrbsUI:Toggle()
     self.Visible=not self.Visible;self._win.Visible=self.Visible
 end
