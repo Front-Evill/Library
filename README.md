@@ -298,3 +298,4 @@ local currentAccent = Window:GetAccentColor()
 local currentBg = Window:GetBackgroundColor()
 ```
 ---
+She has a minor problem, but it will be corrected after a while
