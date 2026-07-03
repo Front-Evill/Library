@@ -6,8 +6,6 @@ VantaUI focuses exclusively on user interface design and animations, providing a
 
 The library includes only visual interface components and interaction systems such as Windows, Tabs, Sections, Toggles, Dropdowns, Sliders, Paragraphs, Buttons, Colorpickers, Keybinds, Text Inputs, Notifications, Dialogs, Scrolling Containers, Window Dragging, and UI Visibility Toggle Keys.
 
-There is no game logic inside the library. It does not include Aimbot, ESP, Silent Aim, Fly, Teleport, Camera Manipulation, Player Interaction, Automation Systems, or any gameplay-related functionality. VantaUI is strictly a UI Layer that can be integrated into any Roblox project.
-
 ---
 
 ```lua
