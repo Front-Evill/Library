@@ -31,23 +31,6 @@ local Window = VantaUI.CreateWindow({
 })
 ```
 
-### All configuration fields are optional
-
-| Property        | Default Value                 |
-| --------------- | ----------------------------- |
-| Title           | `"UI LIBRARY"`                |
-| Size            | `UDim2.new(0, 308, 0, 490)`   |
-| Position        | `UDim2.new(0, 50, 0, 50)`     |
-| Tabs            | `{"Tab 1", "Tab 2", "Tab 3"}` |
-| ToggleKey       | `Enum.KeyCode.F`              |
-| Icon            | Default Icon                  |
-| BackgroundImage | Default Background            |
-| AccentColor     | `Color3.fromRGB(200, 28, 28)` |
-| BackgroundColor | `Color3.fromRGB(10, 8, 16)`   |
-| GuiName         | `"VantaUILibrary"`            |
-
----
-
 ## Section — `Window:Section(tabName, title)`
 
 ```lua
