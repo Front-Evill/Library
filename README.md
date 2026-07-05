@@ -9,7 +9,7 @@ The library only contains design and animation elements: Window, Tabs, Sections/
 ## Installation
 
 ```lua
-local VantaUI = loadstring(game:HttpGet(""))()
+local VantaUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Front-Evill/Gui/refs/heads/main/VantaUI.lua"))()
 ```
 
 ---
