@@ -49,17 +49,6 @@ Icon:Destroy()
 
 `ClickSound` is optional — if you set it, that sound plays every time the icon actually toggles the window (not while dragging it). `ClickSoundVolume` defaults to `0.5`.
 
-### A different look on every run (optional)
-
-If you set `Title = "all"` or `Title = "All"` exactly, the library picks a different title (and a different accent color, if you didn't set one) at random each time the script runs:
-
-```lua
-local Window = VantaUI.CreateWindow({
-    Title = "all",
-    Tabs  = {"General", "Style"},
-})
-```
-
 This only changes the text shown in the window title (and the theme color if you didn't set one) — it never changes the ScreenGui's own name/identity, which always stays exactly what you set in `GuiName`.
 
 ---
