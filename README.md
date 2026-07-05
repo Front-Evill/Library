@@ -1,176 +1,240 @@
 # VantaUI
 
-A Roblox UI Library built entirely using `Instance` and `TweenService` only — with absolutely no external dependencies.
+A UI library for Roblox, built entirely with `Instance` + `TweenService` — no external dependencies.
 
-VantaUI focuses exclusively on user interface design and animations, providing a modern and reusable UI framework for Roblox developers.
-
-The library includes only visual interface components and interaction systems such as Windows, Tabs, Sections, Toggles, Dropdowns, Sliders, Paragraphs, Buttons, Colorpickers, Keybinds, Text Inputs, Notifications, Dialogs, Scrolling Containers, Window Dragging, and UI Visibility Toggle Keys.
+The library only contains design and animation elements: Window, Tabs, Sections/Groups, Toggle, Dropdown, Slider, Colorpicker, Keybind, Input, Button, Paragraph, Notify, confirmation Dialogs, and a floating icon to show/hide the UI.
 
 ---
 
+## Installation
+
 ```lua
-local VantaUI = loadstring(game:HttpGet("https://raw.githubusercontent.com/Front-Evill/Gui/refs/heads/main/VantaUI.lua"))()
+local VantaUI = loadstring(game:HttpGet(""))()
 ```
 
 ---
 
-## Creating a Window — `VantaUI.CreateWindow(config)`
+## Creating a window — `VantaUI.CreateWindow(config)`
 
 ```lua
 local Window = VantaUI.CreateWindow({
     Title           = "VANTA UI",
     Size            = UDim2.new(0, 308, 0, 490),
     Position        = UDim2.new(0, 50, 0, 50),
-    Tabs            = {"General", "Style", "About"},
+    Tabs            = {"General", "Style", "Extras", "About"},
     ToggleKey       = Enum.KeyCode.RightShift,
     Icon            = "rbxassetid://0",
     BackgroundImage = "rbxassetid://0",
     AccentColor     = Color3.fromRGB(200, 28, 28),
     BackgroundColor = Color3.fromRGB(10, 8, 16),
+    Transparency    = 0.8,
     GuiName         = "VantaExample",
 })
 ```
 
-## Section — `Window:Section(tabName, title)`
+### Floating toggle icon — `Window:AddToggleIcon(config)`
 
 ```lua
-Window:Section("General", "MAIN SETTINGS")
+local Icon = Window:AddToggleIcon({
+    Image             = "rbxassetid://0",
+    Size              = UDim2.new(0, 46, 0, 46),
+    Position          = UDim2.new(1, -66, 1, -66),
+    ClickSound        = "rbxassetid://0",
+    ClickSoundVolume  = 0.5,
+})
+
+-- Later, if you want to remove it completely with no issues:
+Icon:Destroy()
 ```
+
+`ClickSound` is optional — if you set it, that sound plays every time the icon actually toggles the window (not while dragging it). `ClickSoundVolume` defaults to `0.5`.
+
+### A different look on every run (optional)
+
+If you set `Title = "all"` or `Title = "All"` exactly, the library picks a different title (and a different accent color, if you didn't set one) at random each time the script runs:
+
+```lua
+local Window = VantaUI.CreateWindow({
+    Title = "all",
+    Tabs  = {"General", "Style"},
+})
+```
+
+This only changes the text shown in the window title (and the theme color if you didn't set one) — it never changes the ScreenGui's own name/identity, which always stays exactly what you set in `GuiName`.
 
 ---
 
-## Toggle — `Window:Toggle(tabName, label, default, callback)`
+## Sections — the recommended way to add elements
+
+`Window:Section(tabName, {Title=...})` builds a rounded box with a nice border under a highlighted title, and returns a **Group** containing every element function. Anything you add through the Group appears grouped inside that same box:
 
 ```lua
-local myToggle = Window:Toggle(
-    "General",
-    "Enable Feature",
-    false,
-    function(value)
+local MainGroup = Window:Section("General", {
+    Title = "MAIN SETTINGS",
+})
+
+MainGroup.Toggle({
+    Title    = "Enable Feature",
+    Default  = false,
+    Callback = function(value) end,
+})
+
+MainGroup.Button({
+    Title       = "Run",
+    Description = "optional",
+    Callback    = function() end,
+})
+
+MainGroup.Slider({
+    Title    = "Value",
+    Min      = 0,
+    Max      = 100,
+    Default  = 50,
+    Suffix   = "%",
+    Callback = function(value) end,
+})
+```
+
+You can create more than one `Section` on the same tab — each gets its own independent box.
+
+### Ungrouped elements (flat)
+
+If you don't need a surrounding box, call the same functions directly on `Window` instead of a Group:
+
+```lua
+Window:Toggle("General", {
+    Title    = "Ungrouped Toggle",
+    Default  = false,
+    Callback = function(value) end,
+})
+```
+
+Every element function (`Toggle`, `Dropdown`, `Slider`, `Colorpicker`, `Keybind`, `Input`, `Button`, `Paragraph`) is available with the same signature on `Window` (flat) and on any `Group` (grouped inside a box) — pick whichever fits.
+
+---
+
+## Available elements
+
+All examples below work whether you call them via `Window:X("TabName", cfg)` or `Group.X(cfg)`.
+
+### 1. Toggle
+
+```lua
+local Toggle = Window:Toggle("General", {
+    Title    = "Enable Feature",
+    Default  = false,
+    Callback = function(value)
         print("New value:", value)
-    end
-)
+    end,
+})
 
-myToggle.Set(true)
+Toggle.Set(true)
+print(Toggle.Get())
 ```
 
----
-
-## Dropdown — `Window:Dropdown(tabName, label, options, default, callback)`
+### 2. Dropdown
 
 ```lua
-Window:Dropdown(
-    "General",
-    "Mode",
-    {"A", "B", "C"},
-    "A",
-    function(selected)
+local Dropdown = Window:Dropdown("General", {
+    Title    = "Mode",
+    Values   = {"A", "B", "C"},
+    Default  = "A",
+    Callback = function(selected)
         print("Selected:", selected)
-    end
-)
+    end,
+})
+
+Dropdown.Set("B")
+print(Dropdown.Get())
 ```
 
----
-
-## Slider — `Window:Slider(tabName, label, min, max, default, suffix, callback)`
+### 3. Slider
 
 ```lua
-Window:Slider(
-    "General",
-    "Value",
-    0,
-    100,
-    50,
-    "%",
-    function(value)
+Window:Slider("General", {
+    Title    = "Value",
+    Min      = 0,
+    Max      = 100,
+    Default  = 50,
+    Suffix   = "%",
+    Callback = function(value)
         print("Value:", value)
-    end
-)
+    end,
+})
 ```
 
----
-
-## Paragraph — `Window:Paragraph(tabName, title, content)`
-
-A non-interactive text block that supports titles and multiline content.
+### 4. Paragraph
 
 ```lua
-Window:Paragraph(
-    "General",
-    "Welcome",
-    "Any explanatory text goes here.\nSupports multiple lines."
-)
+Window:Paragraph("General", {
+    Title   = "Welcome",
+    Content = "Any explanatory text goes here.\nSupports multiple lines.",
+})
 ```
 
----
-
-## Button — `Window:Button(tabName, title, description, callback)`
-
-The description parameter is optional.
+### 5. Button
 
 ```lua
-Window:Button(
-    "General",
-    "Run Action",
-    "Optional description text",
-    function()
+Window:Button("General", {
+    Title       = "Run Action",
+    Description = "Optional description text",
+    Callback    = function()
         print("Button clicked")
-    end
-)
+    end,
+})
 ```
 
----
+### 6. Colorpicker
 
-## Colorpicker — `Window:Colorpicker(tabName, label, default, withAlpha, callback)`
-
-Provides a saturation/brightness area, hue slider, and optional alpha slider.
+Pass `Transparency` (a number between 0 and 1) to enable an extra alpha slider. Leave it unset to hide it.
 
 ```lua
-local Colorpicker = Window:Colorpicker(
-    "Style",
-    "Accent Color",
-    Color3.fromRGB(200, 28, 28),
-    false,
-    function(color, transparency)
+local Colorpicker = Window:Colorpicker("Style", {
+    Title    = "Accent Color",
+    Default  = Color3.fromRGB(200, 28, 28),
+    Callback = function(color, alpha)
         print("Color:", color)
-    end
-)
+    end,
+})
 
-Colorpicker.OnChanged(function(color, transparency)
+Colorpicker.OnChanged(function(color, alpha)
     print("Changed:", color)
 end)
 
 Colorpicker.SetValueRGB(Color3.fromRGB(30, 170, 90))
-
 print(Colorpicker.Value, Colorpicker.Transparency)
 ```
 
----
-
-## Keybind — `Window:Keybind(tabName, label, default, mode, callback)`
-
-Supported keys:
-
-* `Enum.KeyCode.X`
-* `"MB1"`
-* `"MB2"`
-
-Supported modes:
-
-* `"Always"`
-* `"Toggle"`
-* `"Hold"`
+**Wiring it directly into the live theme:**
 
 ```lua
-local Keybind = Window:Keybind(
-    "Extras",
-    "Sample Bind",
-    Enum.KeyCode.RightShift,
-    "Toggle",
-    function(state)
+Window:Colorpicker("Style", {
+    Title    = "Accent Color",
+    Default  = Color3.fromRGB(200, 28, 28),
+    Callback = function(color)
+        Window:SetAccentColor(color)
+    end,
+})
+```
+
+### 7. Keybind
+
+`Default` accepts `Enum.KeyCode.X` or `"MB1"` / `"MB2"` (mouse buttons). `Mode` accepts `"Always"`, `"Toggle"`, or `"Hold"`. `ChangedCallback` is optional and only fires when the bound key itself is rebound.
+
+`Mode = "Always"` now fires `Callback(true)` once immediately when the element is created (previously it only fired the first time `SetValue` was called with that mode, which was inconsistent).
+
+```lua
+local Keybind = Window:Keybind("Extras", {
+    Title           = "Sample Bind",
+    Default         = Enum.KeyCode.RightShift,
+    Mode            = "Toggle",
+    Callback        = function(state)
         print("State:", state)
-    end
-)
+    end,
+    ChangedCallback = function(newKey)
+        print("Rebound to:", newKey)
+    end,
+})
 
 Keybind.OnClick(function()
     print("Pressed while in Toggle mode")
@@ -181,34 +245,29 @@ Keybind.OnChanged(function(state)
 end)
 
 print(Keybind.GetState())
-
 Keybind.SetValue("MB2", "Hold")
 ```
 
----
+### 8. Input
 
-## Input — `Window:Input(tabName, label, default, placeholder, numeric, finished, callback)`
-
-* `numeric = true` allows numbers only.
-* `finished = true` fires the callback only after focus is lost.
+`Numeric = true` allows digits only. `Finished = true` calls `Callback` only when focus is lost, instead of on every keystroke.
 
 ```lua
-Window:Input(
-    "Extras",
-    "Sample Text",
-    "",
-    "Type here...",
-    false,
-    true,
-    function(value)
+Window:Input("Extras", {
+    Title       = "Sample Text",
+    Default     = "",
+    Placeholder = "Type here...",
+    Numeric     = false,
+    Finished    = true,
+    Callback    = function(value)
         print("Submitted:", value)
-    end
-)
+    end,
+})
 ```
 
 ---
 
-## Tab System
+## Tab system
 
 ```lua
 Window:SelectTab("General")
@@ -220,21 +279,23 @@ Window:SelectTab(1)
 ## Notifications — `Window:Notify(config)`
 
 ```lua
-Window:Notify({
-    Title      = "Vanta UI",
-    Content    = "This is a notification",
-    SubContent = "Optional secondary line",
-    Duration   = 5,
+local n = Window:Notify({
+    Title       = "Vanta UI",
+    Content     = "This is a notification",
+    SubContent  = "Optional secondary line",
+    Duration    = 5,
+    Sound       = "rbxassetid://0",
+    SoundVolume = 0.5,
 })
+
+n.Close()
 ```
 
-Notifications appear in the upper-right corner with smooth entrance and exit animations.
-
-If a duration is provided, the notification automatically closes after the specified number of seconds.
+`Sound` is optional — if set, it plays once as soon as the notification appears. `SoundVolume` defaults to `0.5`.
 
 ---
 
-## Dialogs — `Window:Dialog(config)`
+## Confirmation dialog — `Window:Dialog(config)`
 
 ```lua
 Window:Dialog({
@@ -242,43 +303,52 @@ Window:Dialog({
     Content = "This action cannot be undone.",
     Buttons = {
         {
-            Title = "Confirm",
+            Title    = "Confirm",
             Callback = function()
                 print("Confirmed")
-            end
+            end,
         },
         {
-            Title = "Cancel",
+            Title    = "Cancel",
             Callback = function()
                 print("Cancelled")
-            end
+            end,
         },
     },
 })
 ```
 
-Dialogs create a darkened overlay with a centered confirmation window and fully customizable buttons.
-
-The dialog automatically closes when any button is pressed.
-
 ---
 
-# Live Theme System
-
-VantaUI supports real-time theme updates after a window has been created.
+## Theme control
 
 ```lua
 Window:SetAccentColor(Color3.fromRGB(28, 110, 200))
-
 Window:SetBackgroundColor(Color3.fromRGB(14, 14, 14))
-
-Window:SetTheme(
-    Color3.fromRGB(30, 170, 90),
-    Color3.fromRGB(6, 10, 18)
-)
+Window:SetTheme(Color3.fromRGB(30, 170, 90), Color3.fromRGB(6, 10, 18))
 
 local currentAccent = Window:GetAccentColor()
-local currentBg = Window:GetBackgroundColor()
+local currentBg     = Window:GetBackgroundColor()
 ```
+
 ---
-She has a minor problem, but it will be corrected after a while
+
+## Tearing a window down — `Window:Destroy()`
+
+```lua
+Window:Destroy()
+```
+
+Disconnects every input listener the window created (dragging, the toggle key, sliders, keybinds, colorpicker drag areas) and destroys its `ScreenGui`. Use this if your script can reload or rebuild the UI more than once in the same session — without it, each rebuild used to leave the previous window's global input listeners running in the background permanently.
+
+---
+
+## Notes on this cleaned-up build
+
+A pass was done over the original source to check for bugs, dead code, and inconsistent behavior. Nothing about the visual design or the public API's shape changed — these were correctness/consistency fixes only:
+
+- **`Window:Destroy()` added.** Previously there was no way to fully tear down a window: hiding it (`Main.Visible = false`) or destroying the `ScreenGui` directly still left several global `UserInputService` connections (window dragging, the toggle key, every slider, every keybind, every colorpicker's drag zones) running forever in the background, since Roblox only auto-disconnects listeners attached to an instance's own events — not listeners a script attaches to a shared service like `UserInputService`. All of those connections are now tracked internally and released by `Destroy()`.
+- **Clicking outside a dropdown or colorpicker now closes it.** Before, an open dropdown or color panel only closed if you clicked its own button again or opened a different popup; clicking anywhere else on the UI left it open. A single shared "click elsewhere to close" catcher now backs every popup.
+- **`Dropdown` gained a `Get()` function**, matching the `Get`/`Set` pattern already used by `Toggle`, so you can read the current selection without tracking it yourself.
+- **`Keybind` with `Mode = "Always"` now calls `Callback(true)` once at creation**, instead of only the first time `SetValue` was called with that mode — the two code paths previously disagreed on when "always on" actually started notifying you.
+- **`Input` with `Numeric = true` and `Finished` left unset (live updates) no longer double-fires the callback** on a single keystroke. The character-filtering step and the "value changed" notification were two separate listeners on the same event; typing an invalid character could fire `Callback` once with the raw text and again with the filtered text. They're now one listener.
