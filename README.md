@@ -49,8 +49,6 @@ Icon:Destroy()
 
 `ClickSound` is optional — if you set it, that sound plays every time the icon actually toggles the window (not while dragging it). `ClickSoundVolume` defaults to `0.5`.
 
-This only changes the text shown in the window title (and the theme color if you didn't set one) — it never changes the ScreenGui's own name/identity, which always stays exactly what you set in `GuiName`.
-
 ---
 
 ## Sections — the recommended way to add elements
