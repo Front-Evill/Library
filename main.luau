@@ -7,6 +7,8 @@ local Workspace = game:GetService("Workspace")
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
 
+math.randomseed(tick())
+
 local Library = {}
 Library.__index = Library
 
@@ -48,7 +50,8 @@ local function CreateGlassPart()
 	part.CanQuery = false
 	part.CastShadow = false
 	part.Locked = true
-	part.Material = Enum.Material.Glass
+	part.Material = Enum.Material.SmoothPlastic
+	part.Reflectance = 0
 	part.Color = Color3.new(0, 0, 0)
 	part.Transparency = 0.98
 	part.Size = Vector3.new(1, 1, 0)
@@ -185,48 +188,41 @@ local function ResolveTheme(theme)
 	return resolved
 end
 
+local function GenerateThemeFromAccent(accent)
+	local h, s = accent:ToHSV()
+
+	local background = Color3.fromHSV(h, math.clamp(s * 0.35, 0, 0.35), 0.085)
+	local secondary = Color3.fromHSV(h, math.clamp(s * 0.35, 0, 0.35), 0.125)
+	local descColor = Color3.fromHSV(h, math.clamp(s * 0.25, 0, 0.25), 0.68)
+
+	return {
+		Accent = accent,
+		Background = background,
+		Secondary = secondary,
+		TitleColor = Color3.fromRGB(255, 255, 255),
+		DescColor = descColor,
+		Transparency = 0.78,
+	}
+end
+
 Library.Presets = {
-	Dark = {
-		Accent = Color3.fromRGB(90, 90, 100),
-		Background = Color3.fromRGB(18, 18, 22),
-		Secondary = Color3.fromRGB(26, 26, 31),
-		TitleColor = Color3.fromRGB(255, 255, 255),
-		DescColor = Color3.fromRGB(160, 160, 168),
-		Transparency = 0.78,
-	},
-	Purple = {
-		Accent = Color3.fromRGB(140, 90, 255),
-		Background = Color3.fromRGB(22, 18, 30),
-		Secondary = Color3.fromRGB(32, 26, 42),
-		TitleColor = Color3.fromRGB(255, 255, 255),
-		DescColor = Color3.fromRGB(180, 165, 200),
-		Transparency = 0.78,
-	},
-	Rose = {
-		Accent = Color3.fromRGB(255, 90, 130),
-		Background = Color3.fromRGB(28, 18, 22),
-		Secondary = Color3.fromRGB(40, 24, 30),
-		TitleColor = Color3.fromRGB(255, 255, 255),
-		DescColor = Color3.fromRGB(200, 165, 175),
-		Transparency = 0.78,
-	},
-	Blue = {
-		Accent = Color3.fromRGB(80, 140, 255),
-		Background = Color3.fromRGB(16, 20, 28),
-		Secondary = Color3.fromRGB(22, 28, 38),
-		TitleColor = Color3.fromRGB(255, 255, 255),
-		DescColor = Color3.fromRGB(160, 175, 200),
-		Transparency = 0.78,
-	},
-	Green = {
-		Accent = Color3.fromRGB(80, 220, 150),
-		Background = Color3.fromRGB(16, 22, 20),
-		Secondary = Color3.fromRGB(22, 32, 28),
-		TitleColor = Color3.fromRGB(255, 255, 255),
-		DescColor = Color3.fromRGB(160, 195, 180),
-		Transparency = 0.78,
-	},
+	Dark = GenerateThemeFromAccent(Color3.fromRGB(130, 130, 140)),
+	Purple = GenerateThemeFromAccent(Color3.fromRGB(150, 100, 255)),
+	Rose = GenerateThemeFromAccent(Color3.fromRGB(255, 90, 130)),
+	Blue = GenerateThemeFromAccent(Color3.fromRGB(80, 140, 255)),
+	Green = GenerateThemeFromAccent(Color3.fromRGB(80, 220, 150)),
+	Orange = GenerateThemeFromAccent(Color3.fromRGB(255, 150, 70)),
+	Cyan = GenerateThemeFromAccent(Color3.fromRGB(70, 220, 220)),
+	Gold = GenerateThemeFromAccent(Color3.fromRGB(230, 190, 90)),
 }
+
+local function GetRandomPresetName()
+	local names = {}
+	for name in pairs(Library.Presets) do
+		table.insert(names, name)
+	end
+	return names[math.random(1, #names)]
+end
 
 local function CreateInstance(className, properties)
 	local inst = Instance.new(className)
@@ -310,13 +306,25 @@ function Library:Window(config)
 	end
 
 	if type(config.Theme) == "string" then
-		local preset = Library.Presets[config.Theme]
+		local themeName = config.Theme
+		if themeName == "All" or themeName == "Random" then
+			themeName = GetRandomPresetName()
+		end
+
+		local preset = Library.Presets[themeName]
 		if preset then
 			for key, value in pairs(preset) do
 				rawTheme[key] = value
 			end
 		end
 	elseif type(config.Theme) == "table" then
+		if config.Theme.Accent and not config.Theme.Background and not config.Theme.Secondary then
+			local generated = GenerateThemeFromAccent(ToColor3(config.Theme.Accent))
+			for key, value in pairs(generated) do
+				rawTheme[key] = value
+			end
+		end
+
 		for key, value in pairs(config.Theme) do
 			rawTheme[key] = value
 		end
@@ -417,45 +425,48 @@ function Library:Window(config)
 		BorderSizePixel = 0,
 	})
 
-	CreateInstance("UICorner", {
+	local headerContainer = CreateInstance("Frame", {
+		Name = "Header",
 		Parent = topBar,
-		CornerRadius = UDim.new(0, 10),
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, 16, 0, 0),
+		Size = UDim2.new(1, -32, 1, 0),
 	})
 
-	local topBarFix = CreateInstance("Frame", {
-		Parent = topBar,
-		Size = UDim2.new(1, 0, 0, 10),
-		Position = UDim2.new(0, 0, 1, -10),
-		BackgroundColor3 = theme.Secondary,
-		BackgroundTransparency = theme.Transparency,
-		BorderSizePixel = 0,
-		ZIndex = 0,
+	CreateInstance("UIListLayout", {
+		Parent = headerContainer,
+		FillDirection = Enum.FillDirection.Horizontal,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder,
 	})
 
 	local titleLabel = CreateInstance("TextLabel", {
 		Name = "Title",
-		Parent = topBar,
+		Parent = headerContainer,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 16, 0, 6),
-		Size = UDim2.new(1, -32, 0, 20),
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.new(0, 0, 1, 0),
 		Font = Enum.Font.GothamBold,
 		Text = config.Title or "Vanta",
 		TextColor3 = theme.TitleColor,
 		TextSize = 16,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center,
 	})
 
 	local descLabel = CreateInstance("TextLabel", {
 		Name = "SubTitle",
-		Parent = topBar,
+		Parent = headerContainer,
 		BackgroundTransparency = 1,
-		Position = UDim2.new(0, 16, 0, 26),
-		Size = UDim2.new(1, -32, 0, 16),
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.new(0, 0, 1, 0),
 		Font = Enum.Font.Gotham,
 		Text = config.SubTitle or config.Description or "",
 		TextColor3 = theme.DescColor,
-		TextSize = 12,
+		TextSize = 11,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center,
 	})
 
 	local tabsFrame = CreateInstance("Frame", {
@@ -535,6 +546,8 @@ function Library:Window(config)
 
 	local iconButton
 	if config.icno and config.icno.work then
+		local hasImage = config.icno.IdIcon and config.icno.IdIcon ~= ""
+
 		local iconGui = CreateInstance("ScreenGui", {
 			Name = "VantaIcon",
 			Parent = PlayerGui,
@@ -549,55 +562,54 @@ function Library:Window(config)
 			Position = UDim2.new(0, 40, 0, 40),
 			Size = UDim2.new(0, 44, 0, 44),
 			BackgroundColor3 = theme.Background,
-			BackgroundTransparency = theme.Transparency,
+			BackgroundTransparency = hasImage and 1 or theme.Transparency,
 			Text = "",
 			AutoButtonColor = false,
 		})
 
-		CreateInstance("UICorner", {
+		local iconCorner = CreateInstance("UICorner", {
 			Parent = iconButton,
 			CornerRadius = UDim.new(0, 12),
 		})
 
-		CreateInstance("UIStroke", {
+		local iconFrameStroke = CreateInstance("UIStroke", {
 			Parent = iconButton,
 			Color = theme.Accent,
 			Thickness = 1,
-			Transparency = 0.3,
+			Transparency = hasImage and 1 or 0.3,
 		})
 
-		local corner = CreateInstance("Frame", {
-			Name = "Corner",
-			Parent = iconButton,
-			AnchorPoint = Vector2.new(0.5, 0.5),
-			Position = UDim2.new(0.5, 0, 0.5, 0),
-			Size = UDim2.new(0, 20, 0, 20),
-			BackgroundTransparency = 1,
-			BorderSizePixel = 0,
-		})
-
-		CreateInstance("UICorner", {
-			Parent = corner,
-			CornerRadius = UDim.new(1, 0),
-		})
-
-		CreateInstance("UIStroke", {
-			Parent = corner,
-			Color = theme.Accent,
-			Thickness = 2,
-			Transparency = 0,
-		})
-
-		if config.icno.IdIcon and config.icno.IdIcon ~= "" then
+		if hasImage then
 			CreateInstance("ImageLabel", {
 				Parent = iconButton,
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.new(0.5, 0, 0.5, 0),
-				Size = UDim2.new(0, 26, 0, 26),
+				Size = UDim2.new(0, 40, 0, 40),
 				BackgroundTransparency = 1,
 				Image = config.icno.IdIcon,
 			})
-			corner.Visible = false
+		else
+			local corner = CreateInstance("Frame", {
+				Name = "Corner",
+				Parent = iconButton,
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(0.5, 0, 0.5, 0),
+				Size = UDim2.new(0, 20, 0, 20),
+				BackgroundTransparency = 1,
+				BorderSizePixel = 0,
+			})
+
+			CreateInstance("UICorner", {
+				Parent = corner,
+				CornerRadius = UDim.new(1, 0),
+			})
+
+			CreateInstance("UIStroke", {
+				Parent = corner,
+				Color = theme.Accent,
+				Thickness = 2,
+				Transparency = 0,
+			})
 		end
 
 		MakeDraggable(iconButton, iconButton)
@@ -637,7 +649,6 @@ function Library:Window(config)
 	self.MainFrame = mainFrame
 	self.Stroke = stroke
 	self.TopBar = topBar
-	self.TopBarFix = topBarFix
 	self.TitleLabel = titleLabel
 	self.DescLabel = descLabel
 	self.TabsFrame = tabsFrame
@@ -653,7 +664,17 @@ function Library:SetTheme(newTheme)
 	local rawTheme = newTheme
 
 	if type(newTheme) == "string" then
-		rawTheme = Library.Presets[newTheme] or {}
+		local themeName = newTheme
+		if themeName == "All" or themeName == "Random" then
+			themeName = GetRandomPresetName()
+		end
+		rawTheme = Library.Presets[themeName] or {}
+	elseif type(newTheme) == "table" and newTheme.Accent and not newTheme.Background and not newTheme.Secondary then
+		local generated = GenerateThemeFromAccent(ToColor3(newTheme.Accent))
+		for key, value in pairs(newTheme) do
+			generated[key] = value
+		end
+		rawTheme = generated
 	end
 
 	local resolved = ResolveTheme(rawTheme)
@@ -664,8 +685,6 @@ function Library:SetTheme(newTheme)
 	self.Stroke.Color = self.Theme.Accent
 	self.TopBar.BackgroundColor3 = self.Theme.Secondary
 	self.TopBar.BackgroundTransparency = self.Theme.Transparency
-	self.TopBarFix.BackgroundColor3 = self.Theme.Secondary
-	self.TopBarFix.BackgroundTransparency = self.Theme.Transparency
 	self.TabsFrame.BackgroundColor3 = self.Theme.Secondary
 	self.TabsFrame.BackgroundTransparency = self.Theme.Transparency
 	self.ContentFrame.BackgroundColor3 = self.Theme.Background
