@@ -8,8 +8,13 @@ local Window = Library:Window{
 	Size = UDim2.fromOffset(830, 525),
 	Resize = true,
 	Acrylic = true,
-	Theme = "Dark",
+	Theme = "Purple",
 	MinimizeKey = Enum.KeyCode.P,
 	icno = {work = true, IdIcon = ""}
 }
+
+local Tabs = {{ Name = "Home", Icon = "home" }, { Name = "Settings", Icon = "settings" }, { Name = "Players", Icon = "users" }, { Name = "Store", Icon = "shopping-cart" },}
+Window:AddTab(Tabs)
+
+local Sections1 = HOME:AddSection({ Name = "Main", Icon = "home" })
 ```
