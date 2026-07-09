@@ -1043,7 +1043,8 @@ local function GenerateThemeFromAccent(accent)
 		Secondary = secondary,
 		TitleColor = Color3.fromRGB(255, 255, 255),
 		DescColor = descColor,
-		Transparency = 0.78,
+		SectionColor = accent,
+		Transparency = 0.76,
 	}
 end
 
@@ -1057,6 +1058,9 @@ Library.Presets = {
 	Cyan = GenerateThemeFromAccent(Color3.fromRGB(70, 220, 220)),
 	Gold = GenerateThemeFromAccent(Color3.fromRGB(230, 190, 90)),
 }
+
+Library.Presets.Dark.SectionColor = Color3.fromRGB(255, 255, 255)
+
 
 local function GetRandomPresetName()
 	local names = {}
@@ -1311,7 +1315,7 @@ function Library:Window(config)
 		TextYAlignment = Enum.TextYAlignment.Center,
 	})
 
-	local verticalTabs = (windowSize.X.Offset / math.max(windowSize.Y.Offset, 1)) >= 1.6
+	local verticalTabs = (windowSize.X.Offset / math.max(windowSize.Y.Offset, 1)) >= 1.3
 
 	local tabsFrame = CreateInstance("Frame", {
 		Name = "TabsFrame",
@@ -1502,6 +1506,7 @@ function Library:Window(config)
 	self.ContentFrame = contentFrame
 	self.TabsVertical = verticalTabs
 	self.Tabs = {}
+	self.SectionLabels = {}
 	self.Pages = {}
 	self.TabButtons = {}
 	self.TabObjects = {}
@@ -1544,6 +1549,16 @@ function Library:SetTheme(newTheme)
 	self.ContentFrame.BackgroundTransparency = self.Theme.Transparency
 	self.TitleLabel.TextColor3 = self.Theme.TitleColor
 	self.DescLabel.TextColor3 = self.Theme.DescColor
+
+	for _, section in ipairs(self.SectionLabels) do
+		if section and section.Parent then
+			if section:IsA("ImageLabel") then
+				section.ImageColor3 = self.Theme.SectionColor
+			else
+				section.TextColor3 = self.Theme.SectionColor
+			end
+		end
+	end
 end
 
 function Library:SetTitle(text)
@@ -1703,6 +1718,111 @@ end
 
 function Tab:Select()
 	self.Window:SelectTab(self.Name)
+end
+
+local Section = {}
+Section.__index = Section
+
+function Tab:AddSection(config)
+	local text = "Section"
+	local iconName = nil
+
+	if type(config) == "string" then
+		text = config
+	elseif type(config) == "table" then
+		text = config.Name or config.Text or text
+		iconName = config.Icon
+	end
+
+	local sectionFrame = CreateInstance("Frame", {
+		Name = "Section",
+		Parent = self.Page,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = #self.Page:GetChildren(),
+	})
+
+	CreateInstance("UIListLayout", {
+		Parent = sectionFrame,
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	})
+
+	local headerFrame = CreateInstance("Frame", {
+		Name = "Header",
+		Parent = sectionFrame,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 24),
+		LayoutOrder = 1,
+	})
+
+	CreateInstance("UIListLayout", {
+		Parent = headerFrame,
+		FillDirection = Enum.FillDirection.Horizontal,
+		VerticalAlignment = Enum.VerticalAlignment.Center,
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	})
+
+	if iconName and iconName ~= "" then
+		CreateInstance("ImageLabel", {
+			Name = "Icon",
+			Parent = headerFrame,
+			BackgroundTransparency = 1,
+			Image = ResolveIcon(iconName),
+			ImageColor3 = self.Window.Theme.SectionColor,
+			Size = UDim2.new(0, 20, 0, 20),
+			LayoutOrder = 1,
+		})
+	end
+
+	local titleLabel = CreateInstance("TextLabel", {
+		Name = "Title",
+		Parent = headerFrame,
+		BackgroundTransparency = 1,
+		AutomaticSize = Enum.AutomaticSize.X,
+		Size = UDim2.new(0, 0, 1, 0),
+		Font = Enum.Font.GothamBold,
+		Text = text,
+		TextColor3 = self.Window.Theme.SectionColor,
+		TextSize = 18,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		LayoutOrder = 2,
+	})
+
+	local elementsFrame = CreateInstance("Frame", {
+		Name = "Elements",
+		Parent = sectionFrame,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = 2,
+	})
+
+	CreateInstance("UIListLayout", {
+		Parent = elementsFrame,
+		Padding = UDim.new(0, 6),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	})
+
+	table.insert(self.Window.SectionLabels, titleLabel)
+
+	local sectionIcon = headerFrame:FindFirstChild("Icon")
+	if sectionIcon then
+		table.insert(self.Window.SectionLabels, sectionIcon)
+	end
+
+	local sectionObject = setmetatable({
+		Name = text,
+		Frame = sectionFrame,
+		TitleLabel = titleLabel,
+		Container = elementsFrame,
+		Tab = self,
+		Window = self.Window,
+	}, Section)
+
+	return sectionObject
 end
 
 function Library:Destroy()
