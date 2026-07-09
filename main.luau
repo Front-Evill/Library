@@ -1,5 +1,4 @@
 local Players = game:GetService("Players")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
@@ -256,7 +255,7 @@ local function MakeDraggable(dragHandle, target)
 		end
 	end)
 
-	dragHandle.InputChanged:Connect(function(input)
+	UserInputService.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 			if dragging then
 				local delta = input.Position - dragStart
@@ -290,7 +289,7 @@ local function MakeResizable(handle, target, minSize, maxSize)
 		end
 	end)
 
-	handle.InputChanged:Connect(function(input)
+	UserInputService.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
 			if resizing then
 				local delta = input.Position - dragStart
@@ -347,8 +346,7 @@ function Library:Window(config)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		Size = windowSize,
-		BackgroundColor3 = theme.Background,
-		BackgroundTransparency = theme.Transparency,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 	})
@@ -510,19 +508,21 @@ function Library:Window(config)
 			Name = "ResizeHandle",
 			Parent = mainFrame,
 			AnchorPoint = Vector2.new(1, 1),
-			Position = UDim2.new(1, -4, 1, -4),
-			Size = UDim2.new(0, 16, 0, 16),
+			Position = UDim2.new(1, 0, 1, 0),
+			Size = UDim2.new(0, 26, 0, 26),
 			BackgroundTransparency = 1,
+			ZIndex = 10,
 		})
 
 		local grip = CreateInstance("Frame", {
 			Name = "Grip",
 			Parent = resizeHandle,
 			AnchorPoint = Vector2.new(1, 1),
-			Position = UDim2.new(1, 0, 1, 0),
-			Size = UDim2.new(0, 8, 0, 8),
+			Position = UDim2.new(1, -4, 1, -4),
+			Size = UDim2.new(0, 10, 0, 10),
 			BackgroundColor3 = theme.Accent,
 			BackgroundTransparency = 0.3,
+			ZIndex = 10,
 		})
 
 		CreateInstance("UICorner", {
@@ -571,15 +571,21 @@ function Library:Window(config)
 			Parent = iconButton,
 			AnchorPoint = Vector2.new(0.5, 0.5),
 			Position = UDim2.new(0.5, 0, 0.5, 0),
-			Size = UDim2.new(0, 18, 0, 18),
-			BackgroundColor3 = theme.Accent,
+			Size = UDim2.new(0, 20, 0, 20),
+			BackgroundTransparency = 1,
 			BorderSizePixel = 0,
-			Rotation = 0,
 		})
 
 		CreateInstance("UICorner", {
 			Parent = corner,
-			CornerRadius = UDim.new(0, 4),
+			CornerRadius = UDim.new(1, 0),
+		})
+
+		CreateInstance("UIStroke", {
+			Parent = corner,
+			Color = theme.Accent,
+			Thickness = 2,
+			Transparency = 0,
 		})
 
 		if config.icno.IdIcon and config.icno.IdIcon ~= "" then
@@ -593,16 +599,6 @@ function Library:Window(config)
 			})
 			corner.Visible = false
 		end
-
-		task.spawn(function()
-			while corner and corner.Parent do
-				local tween = TweenService:Create(corner, TweenInfo.new(2, Enum.EasingStyle.Linear), {
-					Rotation = corner.Rotation + 360,
-				})
-				tween:Play()
-				tween.Completed:Wait()
-			end
-		end)
 
 		MakeDraggable(iconButton, iconButton)
 
@@ -665,8 +661,6 @@ function Library:SetTheme(newTheme)
 		self.Theme[key] = value
 	end
 
-	self.MainFrame.BackgroundColor3 = self.Theme.Background
-	self.MainFrame.BackgroundTransparency = self.Theme.Transparency
 	self.Stroke.Color = self.Theme.Accent
 	self.TopBar.BackgroundColor3 = self.Theme.Secondary
 	self.TopBar.BackgroundTransparency = self.Theme.Transparency
