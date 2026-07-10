@@ -1332,7 +1332,7 @@ function Library:Window(config)
 		FillDirection = verticalTabs and Enum.FillDirection.Vertical or Enum.FillDirection.Horizontal,
 		Padding = UDim.new(0, 4),
 		HorizontalAlignment = verticalTabs and Enum.HorizontalAlignment.Center or Enum.HorizontalAlignment.Left,
-		VerticalAlignment = Enum.VerticalAlignment.Center,
+		VerticalAlignment = verticalTabs and Enum.VerticalAlignment.Top or Enum.VerticalAlignment.Center,
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	})
 
