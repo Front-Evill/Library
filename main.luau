@@ -1396,8 +1396,13 @@ function Library:Window(config)
 	end
 
 	local iconButton
+	local iconFrameStroke
+	local iconCornerStroke
 	if config.icno and config.icno.work then
 		local hasImage = config.icno.IdIcon and config.icno.IdIcon ~= ""
+		local iconSize = config.icno.Size or 44
+		local innerImageSize = math.floor(iconSize * 0.9)
+		local innerCornerSize = math.floor(iconSize * 0.45)
 
 		local iconGui = CreateInstance("ScreenGui", {
 			Name = "VantaIcon",
@@ -1411,7 +1416,7 @@ function Library:Window(config)
 			Name = "IconToggle",
 			Parent = iconGui,
 			Position = UDim2.new(0, 40, 0, 40),
-			Size = UDim2.new(0, 44, 0, 44),
+			Size = UDim2.new(0, iconSize, 0, iconSize),
 			BackgroundColor3 = theme.Background,
 			BackgroundTransparency = hasImage and 1 or theme.Transparency,
 			Text = "",
@@ -1423,7 +1428,7 @@ function Library:Window(config)
 			CornerRadius = UDim.new(0, 12),
 		})
 
-		local iconFrameStroke = CreateInstance("UIStroke", {
+		iconFrameStroke = CreateInstance("UIStroke", {
 			Parent = iconButton,
 			Color = theme.Accent,
 			Thickness = 1,
@@ -1435,7 +1440,7 @@ function Library:Window(config)
 				Parent = iconButton,
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.new(0.5, 0, 0.5, 0),
-				Size = UDim2.new(0, 40, 0, 40),
+				Size = UDim2.new(0, innerImageSize, 0, innerImageSize),
 				BackgroundTransparency = 1,
 				Image = config.icno.IdIcon,
 			})
@@ -1445,7 +1450,7 @@ function Library:Window(config)
 				Parent = iconButton,
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				Position = UDim2.new(0.5, 0, 0.5, 0),
-				Size = UDim2.new(0, 20, 0, 20),
+				Size = UDim2.new(0, innerCornerSize, 0, innerCornerSize),
 				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 			})
@@ -1455,7 +1460,7 @@ function Library:Window(config)
 				CornerRadius = UDim.new(1, 0),
 			})
 
-			CreateInstance("UIStroke", {
+			iconCornerStroke = CreateInstance("UIStroke", {
 				Parent = corner,
 				Color = theme.Accent,
 				Thickness = 2,
@@ -1513,6 +1518,8 @@ function Library:Window(config)
 	self.ActiveTabName = nil
 	self.ResizeHandle = resizeHandle
 	self.IconButton = iconButton
+	self.IconFrameStroke = iconFrameStroke
+	self.IconCornerStroke = iconCornerStroke
 	self.AcrylicCleanup = acrylicCleanup
 
 	if not Library._ErrorHookConnected then
@@ -1579,6 +1586,18 @@ function Library:SetTheme(newTheme)
 			else
 				section.TextColor3 = self.Theme.SectionColor
 			end
+		end
+	end
+
+	if self.IconButton then
+		if self.IconButton.BackgroundTransparency ~= 1 then
+			self.IconButton.BackgroundColor3 = self.Theme.Background
+		end
+		if self.IconFrameStroke then
+			self.IconFrameStroke.Color = self.Theme.Accent
+		end
+		if self.IconCornerStroke then
+			self.IconCornerStroke.Color = self.Theme.Accent
 		end
 	end
 end
@@ -2104,6 +2123,32 @@ function Library:Notify(config)
 	end
 
 	closeButton.MouseButton1Click:Connect(dismiss)
+
+	if config.SoundID and config.SoundID ~= "" then
+		local soundId = tostring(config.SoundID)
+		if not soundId:match("^rbxassetid://") then
+			soundId = "rbxassetid://" .. soundId
+		end
+
+		local sound = CreateInstance("Sound", {
+			Name = "NotifySound",
+			Parent = card,
+			SoundId = soundId,
+			Volume = config.SoundVolume or 1,
+			PlaybackSpeed = config.SoundSpeed or 1,
+			Looped = config.SoundLooped or false,
+		})
+
+		sound.Ended:Connect(function()
+			if not config.SoundLooped then
+				sound:Destroy()
+			end
+		end)
+
+		pcall(function()
+			sound:Play()
+		end)
+	end
 
 	if config.Duration then
 		task.delay(config.Duration, dismiss)
