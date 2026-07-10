@@ -3,6 +3,7 @@ local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
 local Lighting = game:GetService("Lighting")
 local Workspace = game:GetService("Workspace")
+local TweenService = game:GetService("TweenService")
 
 local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:WaitForChild("PlayerGui")
@@ -1112,6 +1113,17 @@ local function MakeDraggable(dragHandle, target)
 	end)
 end
 
+local function FadeTransparency(entries, duration, easingDirection)
+	for _, entry in ipairs(entries) do
+		local tween = TweenService:Create(
+			entry.instance,
+			TweenInfo.new(duration, Enum.EasingStyle.Quad, easingDirection),
+			{ [entry.prop] = entry.target }
+		)
+		tween:Play()
+	end
+end
+
 local function MakeResizable(handle, target, minSize, maxSize)
 	local resizing = false
 	local dragStart
@@ -1512,6 +1524,7 @@ function Library:Window(config)
 	self.TabsVertical = verticalTabs
 	self.Tabs = {}
 	self.SectionLabels = {}
+	self.Controls = {}
 	self.Pages = {}
 	self.TabButtons = {}
 	self.TabObjects = {}
@@ -1600,6 +1613,10 @@ function Library:SetTheme(newTheme)
 			self.IconCornerStroke.Color = self.Theme.Accent
 		end
 	end
+
+	for _, refresh in ipairs(self.Controls) do
+		pcall(refresh, self.Theme)
+	end
 end
 
 function Library:SetTitle(text)
@@ -1649,7 +1666,7 @@ function Library:AddTab(tabConfig)
 		for _, entry in ipairs(tabConfig) do
 			local single = entry
 
-			if typeof(entry) == "table" and not entry.Name and not entry.Icon then
+			if typeof(entry) == "table" and not entry.Name and not entry.Title and not entry.Icon then
 				single = { Name = entry[1], Icon = entry[2] }
 			end
 
@@ -1661,7 +1678,7 @@ function Library:AddTab(tabConfig)
 		return created
 	end
 
-	local name = tabConfig.Name or ("Tab " .. tostring(#self.Tabs + 1))
+	local name = tabConfig.Name or tabConfig.Title or ("Tab " .. tostring(#self.Tabs + 1))
 	local iconId = ResolveIcon(tabConfig.Icon)
 
 	local button = CreateInstance("TextButton", {
@@ -1835,10 +1852,33 @@ function Tab:AddSection(config)
 	local elementsFrame = CreateInstance("Frame", {
 		Name = "Elements",
 		Parent = sectionFrame,
-		BackgroundTransparency = 1,
+		BackgroundColor3 = self.Window.Theme.Secondary,
+		BackgroundTransparency = self.Window.Theme.Transparency,
+		BorderSizePixel = 0,
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
+		ClipsDescendants = true,
 		LayoutOrder = 2,
+	})
+
+	CreateInstance("UICorner", {
+		Parent = elementsFrame,
+		CornerRadius = UDim.new(0, 10),
+	})
+
+	local elementsStroke = CreateInstance("UIStroke", {
+		Parent = elementsFrame,
+		Color = self.Window.Theme.Accent,
+		Thickness = 1,
+		Transparency = 0.6,
+	})
+
+	CreateInstance("UIPadding", {
+		Parent = elementsFrame,
+		PaddingTop = UDim.new(0, 8),
+		PaddingBottom = UDim.new(0, 8),
+		PaddingLeft = UDim.new(0, 8),
+		PaddingRight = UDim.new(0, 8),
 	})
 
 	CreateInstance("UIListLayout", {
@@ -1846,6 +1886,12 @@ function Tab:AddSection(config)
 		Padding = UDim.new(0, 6),
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	})
+
+	table.insert(self.Window.Controls, function(theme2)
+		elementsFrame.BackgroundColor3 = theme2.Secondary
+		elementsFrame.BackgroundTransparency = theme2.Transparency
+		elementsStroke.Color = theme2.Accent
+	end)
 
 	table.insert(self.Window.SectionLabels, titleLabel)
 
@@ -1864,6 +1910,281 @@ function Tab:AddSection(config)
 	}, Section)
 
 	return sectionObject
+end
+
+function Section:AddButton(config)
+	config = config or {}
+	local theme = self.Window.Theme
+
+	local row = CreateInstance("TextButton", {
+		Name = "Button",
+		Parent = self.Container,
+		BackgroundColor3 = theme.Background,
+		BackgroundTransparency = 0,
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		Text = "",
+		AutoButtonColor = false,
+		LayoutOrder = #self.Container:GetChildren(),
+	})
+
+	CreateInstance("UICorner", {
+		Parent = row,
+		CornerRadius = UDim.new(0, 6),
+	})
+
+	local stroke = CreateInstance("UIStroke", {
+		Parent = row,
+		Color = theme.Accent,
+		Thickness = 1,
+		Transparency = 0.7,
+	})
+
+	CreateInstance("UIPadding", {
+		Parent = row,
+		PaddingTop = UDim.new(0, 10),
+		PaddingBottom = UDim.new(0, 10),
+		PaddingLeft = UDim.new(0, 10),
+		PaddingRight = UDim.new(0, 10),
+	})
+
+	local hasDescription = config.Description and config.Description ~= ""
+
+	local title = CreateInstance("TextLabel", {
+		Name = "Title",
+		Parent = row,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 16),
+		Font = Enum.Font.Gotham,
+		Text = config.Name or "Button",
+		TextColor3 = theme.TitleColor,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	})
+
+	local descLabel
+	if hasDescription then
+		title.Size = UDim2.new(1, 0, 0, 16)
+		descLabel = CreateInstance("TextLabel", {
+			Name = "Description",
+			Parent = row,
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0, 0, 0, 18),
+			Size = UDim2.new(1, 0, 0, 14),
+			Font = Enum.Font.Gotham,
+			Text = config.Description,
+			TextColor3 = theme.DescColor,
+			TextSize = 11,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		})
+	end
+
+	row.MouseEnter:Connect(function()
+		row.BackgroundColor3 = self.Window.Theme.Secondary
+	end)
+
+	row.MouseLeave:Connect(function()
+		row.BackgroundColor3 = self.Window.Theme.Background
+	end)
+
+	row.MouseButton1Down:Connect(function()
+		row.BackgroundColor3 = self.Window.Theme.Accent
+	end)
+
+	row.MouseButton1Up:Connect(function()
+		row.BackgroundColor3 = self.Window.Theme.Secondary
+	end)
+
+	row.MouseButton1Click:Connect(function()
+		if config.Callback then
+			local ok, err = pcall(config.Callback)
+			if not ok then
+				warn("Vanta Button Callback Error: " .. tostring(err))
+			end
+		end
+	end)
+
+	table.insert(self.Window.Controls, function(theme2)
+		row.BackgroundColor3 = theme2.Background
+		stroke.Color = theme2.Accent
+		title.TextColor3 = theme2.TitleColor
+		if descLabel then
+			descLabel.TextColor3 = theme2.DescColor
+		end
+	end)
+
+	return {
+		Frame = row,
+		Name = config.Name,
+	}
+end
+
+function Section:AddToggle(config)
+	config = config or {}
+	local theme = self.Window.Theme
+	local value = config.Default == true
+
+	local row = CreateInstance("Frame", {
+		Name = "Toggle",
+		Parent = self.Container,
+		BackgroundColor3 = theme.Background,
+		BackgroundTransparency = 0,
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = #self.Container:GetChildren(),
+	})
+
+	CreateInstance("UICorner", {
+		Parent = row,
+		CornerRadius = UDim.new(0, 6),
+	})
+
+	local rowStroke = CreateInstance("UIStroke", {
+		Parent = row,
+		Color = theme.Accent,
+		Thickness = 1,
+		Transparency = 0.7,
+	})
+
+	CreateInstance("UIPadding", {
+		Parent = row,
+		PaddingTop = UDim.new(0, 10),
+		PaddingBottom = UDim.new(0, 10),
+		PaddingLeft = UDim.new(0, 10),
+		PaddingRight = UDim.new(0, 10),
+	})
+
+	local hasDescription = config.Description and config.Description ~= ""
+
+	local textContainer = CreateInstance("Frame", {
+		Name = "TextContainer",
+		Parent = row,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, -56, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+	})
+
+	local title = CreateInstance("TextLabel", {
+		Name = "Title",
+		Parent = textContainer,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 16),
+		Font = Enum.Font.Gotham,
+		Text = config.Name or "Toggle",
+		TextColor3 = theme.TitleColor,
+		TextSize = 13,
+		TextXAlignment = Enum.TextXAlignment.Left,
+	})
+
+	local descLabel
+	if hasDescription then
+		descLabel = CreateInstance("TextLabel", {
+			Name = "Description",
+			Parent = textContainer,
+			BackgroundTransparency = 1,
+			Position = UDim2.new(0, 0, 0, 18),
+			Size = UDim2.new(1, 0, 0, 14),
+			Font = Enum.Font.Gotham,
+			Text = config.Description,
+			TextColor3 = theme.DescColor,
+			TextSize = 11,
+			TextXAlignment = Enum.TextXAlignment.Left,
+		})
+	end
+
+	local switchBg = CreateInstance("Frame", {
+		Name = "Switch",
+		Parent = row,
+		AnchorPoint = Vector2.new(1, 0.5),
+		Position = UDim2.new(1, 0, 0.5, 0),
+		Size = UDim2.new(0, 40, 0, 22),
+		BackgroundColor3 = value and theme.Accent or theme.Background,
+		BorderSizePixel = 0,
+	})
+
+	CreateInstance("UICorner", {
+		Parent = switchBg,
+		CornerRadius = UDim.new(1, 0),
+	})
+
+	local knob = CreateInstance("Frame", {
+		Name = "Knob",
+		Parent = switchBg,
+		AnchorPoint = Vector2.new(0, 0.5),
+		Position = value and UDim2.new(1, -20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0),
+		Size = UDim2.new(0, 18, 0, 18),
+		BackgroundColor3 = Color3.fromRGB(255, 255, 255),
+		BorderSizePixel = 0,
+	})
+
+	CreateInstance("UICorner", {
+		Parent = knob,
+		CornerRadius = UDim.new(1, 0),
+	})
+
+	local clickArea = CreateInstance("TextButton", {
+		Parent = row,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Text = "",
+		AutoButtonColor = false,
+	})
+
+	local function setValue(newValue, fireCallback)
+		value = newValue
+		local currentTheme = self.Window.Theme
+
+		local targetPos = value and UDim2.new(1, -20, 0.5, 0) or UDim2.new(0, 2, 0.5, 0)
+		local targetColor = value and currentTheme.Accent or currentTheme.Background
+
+		TweenService:Create(knob, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			Position = targetPos,
+		}):Play()
+
+		TweenService:Create(switchBg, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+			BackgroundColor3 = targetColor,
+		}):Play()
+
+		if fireCallback and config.Callback then
+			local ok, err = pcall(config.Callback, value)
+			if not ok then
+				warn("Vanta Toggle Callback Error: " .. tostring(err))
+			end
+		end
+	end
+
+	clickArea.MouseButton1Click:Connect(function()
+		setValue(not value, true)
+	end)
+
+	row.MouseEnter:Connect(function()
+		row.BackgroundColor3 = self.Window.Theme.Secondary
+	end)
+
+	row.MouseLeave:Connect(function()
+		row.BackgroundColor3 = self.Window.Theme.Background
+	end)
+
+	table.insert(self.Window.Controls, function(theme2)
+		row.BackgroundColor3 = theme2.Background
+		rowStroke.Color = theme2.Accent
+		title.TextColor3 = theme2.TitleColor
+		if descLabel then
+			descLabel.TextColor3 = theme2.DescColor
+		end
+		switchBg.BackgroundColor3 = value and theme2.Accent or theme2.Background
+	end)
+
+	return {
+		Frame = row,
+		Name = config.Name,
+		Set = function(_, newValue)
+			setValue(newValue, false)
+		end,
+		Get = function()
+			return value
+		end,
+	}
 end
 
 function Library:SafeFind(root, ...)
@@ -1981,28 +2302,32 @@ function Library:Notify(config)
 
 	self.NotifyOrder = (self.NotifyOrder or 0) + 1
 
+	local fadeEntries = {}
+
 	local card = CreateInstance("Frame", {
 		Name = "Notification",
 		Parent = container,
 		BackgroundColor3 = self.Theme.Background,
-		BackgroundTransparency = self.Theme.Transparency,
+		BackgroundTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 0),
 		AutomaticSize = Enum.AutomaticSize.Y,
 		LayoutOrder = self.NotifyOrder,
 		BorderSizePixel = 0,
 	})
+	table.insert(fadeEntries, { instance = card, prop = "BackgroundTransparency", target = self.Theme.Transparency })
 
 	CreateInstance("UICorner", {
 		Parent = card,
 		CornerRadius = UDim.new(0, 10),
 	})
 
-	CreateInstance("UIStroke", {
+	local cardStroke = CreateInstance("UIStroke", {
 		Parent = card,
 		Color = self.Theme.Accent,
 		Thickness = 1,
-		Transparency = 0.3,
+		Transparency = 1,
 	})
+	table.insert(fadeEntries, { instance = cardStroke, prop = "Transparency", target = 0.3 })
 
 	CreateInstance("UIPadding", {
 		Parent = card,
@@ -2020,15 +2345,17 @@ function Library:Notify(config)
 
 		local iconId = (iconCfg.IdIcon and iconCfg.IdIcon ~= "") and ResolveIcon(iconCfg.IdIcon) or ResolveIcon("alert-triangle")
 
-		CreateInstance("ImageLabel", {
+		local iconLabel = CreateInstance("ImageLabel", {
 			Name = "Icon",
 			Parent = card,
 			BackgroundTransparency = 1,
+			ImageTransparency = 1,
 			Image = iconId,
 			ImageColor3 = self.Theme.Accent,
 			Position = UDim2.new(0, 0, 0, 2),
 			Size = UDim2.new(0, 22, 0, 22),
 		})
+		table.insert(fadeEntries, { instance = iconLabel, prop = "ImageTransparency", target = 0 })
 	end
 
 	local textContainer = CreateInstance("Frame", {
@@ -2046,10 +2373,11 @@ function Library:Notify(config)
 		SortOrder = Enum.SortOrder.LayoutOrder,
 	})
 
-	CreateInstance("TextLabel", {
+	local titleLabel = CreateInstance("TextLabel", {
 		Name = "Title",
 		Parent = textContainer,
 		BackgroundTransparency = 1,
+		TextTransparency = 1,
 		Size = UDim2.new(1, 0, 0, 18),
 		Font = Enum.Font.GothamBold,
 		Text = config.Title or "Notification",
@@ -2059,12 +2387,14 @@ function Library:Notify(config)
 		TextWrapped = true,
 		LayoutOrder = 1,
 	})
+	table.insert(fadeEntries, { instance = titleLabel, prop = "TextTransparency", target = 0 })
 
 	if config.Content and config.Content ~= "" then
 		local contentLabel = CreateInstance("TextLabel", {
 			Name = "Content",
 			Parent = textContainer,
 			BackgroundTransparency = 1,
+			TextTransparency = 1,
 			Size = UDim2.new(1, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			Font = Enum.Font.Gotham,
@@ -2075,13 +2405,15 @@ function Library:Notify(config)
 			TextWrapped = true,
 			LayoutOrder = 2,
 		})
+		table.insert(fadeEntries, { instance = contentLabel, prop = "TextTransparency", target = 0 })
 	end
 
 	if config.SubContent and config.SubContent ~= "" then
-		CreateInstance("TextLabel", {
+		local subContentLabel = CreateInstance("TextLabel", {
 			Name = "SubContent",
 			Parent = textContainer,
 			BackgroundTransparency = 1,
+			TextTransparency = 1,
 			Size = UDim2.new(1, 0, 0, 0),
 			AutomaticSize = Enum.AutomaticSize.Y,
 			Font = Enum.Font.Gotham,
@@ -2092,6 +2424,7 @@ function Library:Notify(config)
 			TextWrapped = true,
 			LayoutOrder = 3,
 		})
+		table.insert(fadeEntries, { instance = subContentLabel, prop = "TextTransparency", target = 0 })
 	end
 
 	local closeButton = CreateInstance("TextButton", {
@@ -2105,13 +2438,15 @@ function Library:Notify(config)
 		AutoButtonColor = false,
 	})
 
-	CreateInstance("ImageLabel", {
+	local closeIcon = CreateInstance("ImageLabel", {
 		Parent = closeButton,
 		BackgroundTransparency = 1,
+		ImageTransparency = 1,
 		Size = UDim2.new(1, 0, 1, 0),
 		Image = ResolveIcon("x"),
 		ImageColor3 = self.Theme.DescColor,
 	})
+	table.insert(fadeEntries, { instance = closeIcon, prop = "ImageTransparency", target = 0 })
 
 	local dismissed = false
 	local function dismiss()
@@ -2119,10 +2454,22 @@ function Library:Notify(config)
 			return
 		end
 		dismissed = true
-		card:Destroy()
+
+		local exitEntries = {}
+		for _, entry in ipairs(fadeEntries) do
+			table.insert(exitEntries, { instance = entry.instance, prop = entry.prop, target = 1 })
+		end
+
+		FadeTransparency(exitEntries, 0.2, Enum.EasingDirection.In)
+
+		task.delay(0.2, function()
+			card:Destroy()
+		end)
 	end
 
 	closeButton.MouseButton1Click:Connect(dismiss)
+
+	FadeTransparency(fadeEntries, 0.25, Enum.EasingDirection.Out)
 
 	if config.SoundID and config.SoundID ~= "" then
 		local soundId = tostring(config.SoundID)
@@ -2160,6 +2507,207 @@ function Library:Notify(config)
 	}
 end
 
+function Library:Dialog(config)
+	config = config or {}
+
+	self.DialogGui = self.DialogGui or CreateInstance("ScreenGui", {
+		Name = "VantaDialog",
+		Parent = PlayerGui,
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		DisplayOrder = 2000,
+	})
+
+	local fadeEntries = {}
+
+	local backdrop = CreateInstance("Frame", {
+		Name = "Backdrop",
+		Parent = self.DialogGui,
+		Size = UDim2.fromScale(1, 1),
+		BackgroundColor3 = Color3.fromRGB(0, 0, 0),
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+		Active = true,
+	})
+	table.insert(fadeEntries, { instance = backdrop, prop = "BackgroundTransparency", target = 0.5 })
+
+	local card = CreateInstance("Frame", {
+		Name = "DialogCard",
+		Parent = backdrop,
+		AnchorPoint = Vector2.new(0.5, 0.5),
+		Position = UDim2.new(0.5, 0, 0.5, 0),
+		Size = UDim2.new(0, 380, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		BackgroundColor3 = self.Theme.Background,
+		BackgroundTransparency = 1,
+		BorderSizePixel = 0,
+	})
+	table.insert(fadeEntries, { instance = card, prop = "BackgroundTransparency", target = self.Theme.Transparency })
+
+	CreateInstance("UICorner", {
+		Parent = card,
+		CornerRadius = UDim.new(0, 12),
+	})
+
+	local cardStroke = CreateInstance("UIStroke", {
+		Parent = card,
+		Color = self.Theme.Accent,
+		Thickness = 1,
+		Transparency = 1,
+	})
+	table.insert(fadeEntries, { instance = cardStroke, prop = "Transparency", target = 0.3 })
+
+	CreateInstance("UIPadding", {
+		Parent = card,
+		PaddingTop = UDim.new(0, 20),
+		PaddingBottom = UDim.new(0, 20),
+		PaddingLeft = UDim.new(0, 20),
+		PaddingRight = UDim.new(0, 20),
+	})
+
+	local layout = CreateInstance("UIListLayout", {
+		Parent = card,
+		Padding = UDim.new(0, 14),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	})
+
+	local titleLabel = CreateInstance("TextLabel", {
+		Name = "Title",
+		Parent = card,
+		BackgroundTransparency = 1,
+		TextTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 20),
+		Font = Enum.Font.GothamBold,
+		Text = config.Title or "Dialog",
+		TextColor3 = self.Theme.TitleColor,
+		TextSize = 17,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextWrapped = true,
+		LayoutOrder = 1,
+	})
+	table.insert(fadeEntries, { instance = titleLabel, prop = "TextTransparency", target = 0 })
+
+	if config.Content and config.Content ~= "" then
+		local contentLabel = CreateInstance("TextLabel", {
+			Name = "Content",
+			Parent = card,
+			BackgroundTransparency = 1,
+			TextTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Font = Enum.Font.Gotham,
+			Text = config.Content,
+			TextColor3 = self.Theme.DescColor,
+			TextSize = 14,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextWrapped = true,
+			LayoutOrder = 2,
+		})
+		table.insert(fadeEntries, { instance = contentLabel, prop = "TextTransparency", target = 0 })
+	end
+
+	local buttons = config.Buttons or {}
+	local buttonCount = math.max(#buttons, 1)
+
+	local buttonsRow = CreateInstance("Frame", {
+		Name = "Buttons",
+		Parent = card,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 36),
+		LayoutOrder = 3,
+	})
+
+	CreateInstance("UIListLayout", {
+		Parent = buttonsRow,
+		FillDirection = Enum.FillDirection.Horizontal,
+		Padding = UDim.new(0, 10),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	})
+
+	local dismissed = false
+	local function close()
+		if dismissed then
+			return
+		end
+		dismissed = true
+
+		local exitEntries = {}
+		for _, entry in ipairs(fadeEntries) do
+			table.insert(exitEntries, { instance = entry.instance, prop = entry.prop, target = 1 })
+		end
+
+		FadeTransparency(exitEntries, 0.18, Enum.EasingDirection.In)
+
+		task.delay(0.18, function()
+			backdrop:Destroy()
+		end)
+	end
+
+	for index, buttonConfig in ipairs(buttons) do
+		local isPrimary = index == 1
+
+		local buttonFrame = CreateInstance("TextButton", {
+			Name = "Button" .. index,
+			Parent = buttonsRow,
+			Size = UDim2.new(1 / buttonCount, -8, 1, 0),
+			BackgroundColor3 = isPrimary and self.Theme.Accent or self.Theme.Secondary,
+			BackgroundTransparency = 1,
+			Text = "",
+			AutoButtonColor = false,
+			LayoutOrder = index,
+		})
+		table.insert(fadeEntries, {
+			instance = buttonFrame,
+			prop = "BackgroundTransparency",
+			target = isPrimary and 0 or self.Theme.Transparency,
+		})
+
+		CreateInstance("UICorner", {
+			Parent = buttonFrame,
+			CornerRadius = UDim.new(0, 8),
+		})
+
+		if not isPrimary then
+			local btnStroke = CreateInstance("UIStroke", {
+				Parent = buttonFrame,
+				Color = self.Theme.Accent,
+				Thickness = 1,
+				Transparency = 1,
+			})
+			table.insert(fadeEntries, { instance = btnStroke, prop = "Transparency", target = 0.4 })
+		end
+
+		local btnLabel = CreateInstance("TextLabel", {
+			Parent = buttonFrame,
+			BackgroundTransparency = 1,
+			TextTransparency = 1,
+			Size = UDim2.fromScale(1, 1),
+			Font = Enum.Font.GothamBold,
+			Text = buttonConfig.Title or ("Button " .. index),
+			TextColor3 = self.Theme.TitleColor,
+			TextSize = 13,
+		})
+		table.insert(fadeEntries, { instance = btnLabel, prop = "TextTransparency", target = 0 })
+
+		buttonFrame.MouseButton1Click:Connect(function()
+			if buttonConfig.Callback then
+				local ok, err = pcall(buttonConfig.Callback)
+				if not ok then
+					warn("Vanta Dialog Callback Error: " .. tostring(err))
+				end
+			end
+			close()
+		end)
+	end
+
+	FadeTransparency(fadeEntries, 0.2, Enum.EasingDirection.Out)
+
+	return {
+		Frame = card,
+		Close = close,
+	}
+end
+
 function Library:Destroy()
 	if self.IconButton and self.IconButton.Parent then
 		self.IconButton.Parent:Destroy()
@@ -2168,6 +2716,10 @@ function Library:Destroy()
 		self.NotifyGui:Destroy()
 		self.NotifyGui = nil
 		self.NotifyContainers = nil
+	end
+	if self.DialogGui then
+		self.DialogGui:Destroy()
+		self.DialogGui = nil
 	end
 	if self.ScreenGui then
 		self.ScreenGui:Destroy()
