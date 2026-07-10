@@ -1950,7 +1950,13 @@ end
 function Library:Notify(config)
 	config = config or {}
 
-	local iconCfg = config.icone or {}
+	local iconCfg = config.icone
+
+	if iconCfg == true then
+		iconCfg = { Work = true, IdIcon = "", Type = "up" }
+	elseif iconCfg == false or iconCfg == nil then
+		iconCfg = { Work = false }
+	end
 	local position = iconCfg.Type == "down" and "down" or "up"
 	local container = self:GetNotifyContainer(position)
 
