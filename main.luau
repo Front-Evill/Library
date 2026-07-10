@@ -1515,6 +1515,28 @@ function Library:Window(config)
 	self.IconButton = iconButton
 	self.AcrylicCleanup = acrylicCleanup
 
+	if not Library._ErrorHookConnected then
+		Library._ErrorHookConnected = true
+
+		local ok, ScriptContext = pcall(function()
+			return game:GetService("ScriptContext")
+		end)
+
+		if ok and ScriptContext then
+			ScriptContext.Error:Connect(function(message, trace, errScript)
+				local scriptName = errScript and errScript.Name or "Unknown"
+
+				self:Notify({
+					Title = "خطأ بالكود",
+					Content = tostring(message),
+					SubContent = "Script: " .. tostring(scriptName),
+					Duration = 7,
+					icone = {Work = true, IdIcon = "", Type = "up"},
+				})
+			end)
+		end
+	end
+
 	return self
 end
 
@@ -1825,9 +1847,276 @@ function Tab:AddSection(config)
 	return sectionObject
 end
 
+function Library:SafeFind(root, ...)
+	local current = root
+	local pathParts = {...}
+
+	if not current then
+		self:Notify({
+			Title = "خطأ بالمسار",
+			Content = "الجذر (root) اللي أعطيته فارغ (nil)",
+			Duration = 6,
+			icone = {Work = true, IdIcon = "", Type = "up"},
+		})
+		return nil
+	end
+
+	for _, part in ipairs(pathParts) do
+		local ok, child = pcall(function()
+			return current:WaitForChild(part, 3)
+		end)
+
+		if not ok or not child then
+			self:Notify({
+				Title = "خطأ بالمسار",
+				Content = 'تعذر إيجاد "' .. tostring(part) .. '" داخل ' .. tostring(current.Name),
+				Duration = 6,
+				icone = {Work = true, IdIcon = "", Type = "up"},
+			})
+			return nil
+		end
+
+		current = child
+	end
+
+	return current
+end
+
+function Library:SafePlayer(nameOrUserId)
+	local Players = game:GetService("Players")
+	local player = nil
+
+	if type(nameOrUserId) == "number" then
+		local ok, result = pcall(function()
+			return Players:GetPlayerByUserId(nameOrUserId)
+		end)
+		player = ok and result or nil
+	else
+		local ok, result = pcall(function()
+			return Players:FindFirstChild(tostring(nameOrUserId))
+		end)
+		player = ok and result or nil
+	end
+
+	if not player then
+		self:Notify({
+			Title = "خطأ باللاعب",
+			Content = "ما لكيت لاعب بالاسم/الآيدي: " .. tostring(nameOrUserId),
+			Duration = 6,
+			icone = {Work = true, IdIcon = "", Type = "up"},
+		})
+		return nil
+	end
+
+	return player
+end
+
+function Library:GetNotifyContainer(position)
+	self.NotifyGui = self.NotifyGui or CreateInstance("ScreenGui", {
+		Name = "VantaNotifications",
+		Parent = PlayerGui,
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		DisplayOrder = 1500,
+	})
+
+	self.NotifyContainers = self.NotifyContainers or {}
+
+	if self.NotifyContainers[position] then
+		return self.NotifyContainers[position]
+	end
+
+	local container = CreateInstance("Frame", {
+		Name = "NotifyContainer_" .. position,
+		Parent = self.NotifyGui,
+		BackgroundTransparency = 1,
+		AnchorPoint = position == "down" and Vector2.new(1, 1) or Vector2.new(1, 0),
+		Position = position == "down" and UDim2.new(1, -20, 1, -20) or UDim2.new(1, -20, 0, 20),
+		Size = UDim2.new(0, 300, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+	})
+
+	CreateInstance("UIListLayout", {
+		Parent = container,
+		Padding = UDim.new(0, 8),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		VerticalAlignment = position == "down" and Enum.VerticalAlignment.Bottom or Enum.VerticalAlignment.Top,
+	})
+
+	self.NotifyContainers[position] = container
+	return container
+end
+
+function Library:Notify(config)
+	config = config or {}
+
+	local iconCfg = config.icone or {}
+	local position = iconCfg.Type == "down" and "down" or "up"
+	local container = self:GetNotifyContainer(position)
+
+	self.NotifyOrder = (self.NotifyOrder or 0) + 1
+
+	local card = CreateInstance("Frame", {
+		Name = "Notification",
+		Parent = container,
+		BackgroundColor3 = self.Theme.Background,
+		BackgroundTransparency = self.Theme.Transparency,
+		Size = UDim2.new(1, 0, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+		LayoutOrder = self.NotifyOrder,
+		BorderSizePixel = 0,
+	})
+
+	CreateInstance("UICorner", {
+		Parent = card,
+		CornerRadius = UDim.new(0, 10),
+	})
+
+	CreateInstance("UIStroke", {
+		Parent = card,
+		Color = self.Theme.Accent,
+		Thickness = 1,
+		Transparency = 0.3,
+	})
+
+	CreateInstance("UIPadding", {
+		Parent = card,
+		PaddingTop = UDim.new(0, 12),
+		PaddingBottom = UDim.new(0, 12),
+		PaddingLeft = UDim.new(0, 12),
+		PaddingRight = UDim.new(0, 12),
+	})
+
+	local hasIcon = iconCfg.Work == true
+
+	local textOffset = 0
+	if hasIcon then
+		textOffset = 32
+
+		local iconId = (iconCfg.IdIcon and iconCfg.IdIcon ~= "") and ResolveIcon(iconCfg.IdIcon) or ResolveIcon("alert-triangle")
+
+		CreateInstance("ImageLabel", {
+			Name = "Icon",
+			Parent = card,
+			BackgroundTransparency = 1,
+			Image = iconId,
+			ImageColor3 = self.Theme.Accent,
+			Position = UDim2.new(0, 0, 0, 2),
+			Size = UDim2.new(0, 22, 0, 22),
+		})
+	end
+
+	local textContainer = CreateInstance("Frame", {
+		Name = "TextContainer",
+		Parent = card,
+		BackgroundTransparency = 1,
+		Position = UDim2.new(0, textOffset, 0, 0),
+		Size = UDim2.new(1, -textOffset, 0, 0),
+		AutomaticSize = Enum.AutomaticSize.Y,
+	})
+
+	CreateInstance("UIListLayout", {
+		Parent = textContainer,
+		Padding = UDim.new(0, 2),
+		SortOrder = Enum.SortOrder.LayoutOrder,
+	})
+
+	CreateInstance("TextLabel", {
+		Name = "Title",
+		Parent = textContainer,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 0, 18),
+		Font = Enum.Font.GothamBold,
+		Text = config.Title or "Notification",
+		TextColor3 = self.Theme.TitleColor,
+		TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextWrapped = true,
+		LayoutOrder = 1,
+	})
+
+	if config.Content and config.Content ~= "" then
+		local contentLabel = CreateInstance("TextLabel", {
+			Name = "Content",
+			Parent = textContainer,
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Font = Enum.Font.Gotham,
+			Text = config.Content,
+			TextColor3 = self.Theme.DescColor,
+			TextSize = 13,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextWrapped = true,
+			LayoutOrder = 2,
+		})
+	end
+
+	if config.SubContent and config.SubContent ~= "" then
+		CreateInstance("TextLabel", {
+			Name = "SubContent",
+			Parent = textContainer,
+			BackgroundTransparency = 1,
+			Size = UDim2.new(1, 0, 0, 0),
+			AutomaticSize = Enum.AutomaticSize.Y,
+			Font = Enum.Font.Gotham,
+			Text = config.SubContent,
+			TextColor3 = self.Theme.DescColor,
+			TextSize = 11,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextWrapped = true,
+			LayoutOrder = 3,
+		})
+	end
+
+	local closeButton = CreateInstance("TextButton", {
+		Name = "Close",
+		Parent = card,
+		BackgroundTransparency = 1,
+		AnchorPoint = Vector2.new(1, 0),
+		Position = UDim2.new(1, 0, 0, 0),
+		Size = UDim2.new(0, 16, 0, 16),
+		Text = "",
+		AutoButtonColor = false,
+	})
+
+	CreateInstance("ImageLabel", {
+		Parent = closeButton,
+		BackgroundTransparency = 1,
+		Size = UDim2.new(1, 0, 1, 0),
+		Image = ResolveIcon("x"),
+		ImageColor3 = self.Theme.DescColor,
+	})
+
+	local dismissed = false
+	local function dismiss()
+		if dismissed then
+			return
+		end
+		dismissed = true
+		card:Destroy()
+	end
+
+	closeButton.MouseButton1Click:Connect(dismiss)
+
+	if config.Duration then
+		task.delay(config.Duration, dismiss)
+	end
+
+	return {
+		Frame = card,
+		Dismiss = dismiss,
+	}
+end
+
 function Library:Destroy()
 	if self.IconButton and self.IconButton.Parent then
 		self.IconButton.Parent:Destroy()
+	end
+	if self.NotifyGui then
+		self.NotifyGui:Destroy()
+		self.NotifyGui = nil
+		self.NotifyContainers = nil
 	end
 	if self.ScreenGui then
 		self.ScreenGui:Destroy()
