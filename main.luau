@@ -866,9 +866,9 @@ local function EnableAcrylicLighting()
 
 	local dof = Instance.new("DepthOfFieldEffect")
 	dof.Name = "VantaAcrylicDOF"
-	dof.FarIntensity = 0
+	dof.FarIntensity = 1
 	dof.NearIntensity = 1
-	dof.InFocusRadius = 0.1
+	dof.InFocusRadius = 0.05
 	dof.FocusDistance = 0.05
 	dof.Parent = Lighting
 end
@@ -1044,7 +1044,7 @@ local function GenerateThemeFromAccent(accent)
 		TitleColor = Color3.fromRGB(255, 255, 255),
 		DescColor = descColor,
 		SectionColor = accent,
-		Transparency = 0.76,
+		Transparency = 0.35,
 	}
 end
 
