@@ -16,5 +16,5 @@ local Window = Library:Window{
 local Tabs = {{ Name = "Home", Icon = "home" }, { Name = "Settings", Icon = "settings" }, { Name = "Players", Icon = "users" }, { Name = "Store", Icon = "shopping-cart" },}
 Window:AddTab(Tabs)
 
-local Sections1 = HOME:AddSection({ Name = "Main", Icon = "home" })
+local Sections1 = Home:AddSection({ Name = "Main", Icon = "home" })
 ```
