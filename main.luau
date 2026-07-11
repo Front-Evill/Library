@@ -1212,7 +1212,8 @@ function Library:Window(config)
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		Size = windowSize,
-		BackgroundTransparency = 1,
+		BackgroundColor3 = theme.Background,
+		BackgroundTransparency = theme.Transparency,
 		BorderSizePixel = 0,
 		ClipsDescendants = true,
 	})
@@ -1278,14 +1279,19 @@ function Library:Window(config)
 		Parent = mainFrame,
 		Size = UDim2.new(1, 0, 0, 50),
 		Position = UDim2.new(0, 0, 0, 0),
-		BackgroundColor3 = theme.Secondary,
-		BackgroundTransparency = theme.Transparency,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 	})
 
-	CreateInstance("UICorner", {
+	local topBarDivider = CreateInstance("Frame", {
+		Name = "Divider",
 		Parent = topBar,
-		CornerRadius = UDim.new(0, 10),
+		AnchorPoint = Vector2.new(0, 1),
+		Position = UDim2.new(0, 0, 1, 0),
+		Size = UDim2.new(1, 0, 0, 1),
+		BackgroundColor3 = theme.Accent,
+		BackgroundTransparency = 0.75,
+		BorderSizePixel = 0,
 	})
 
 	local headerContainer = CreateInstance("Frame", {
@@ -1339,15 +1345,33 @@ function Library:Window(config)
 		Parent = mainFrame,
 		Position = verticalTabs and UDim2.new(0, 0, 0, 50) or UDim2.new(0, 0, 0, 50),
 		Size = verticalTabs and UDim2.new(0, tabWidth, 1, -50) or UDim2.new(1, 0, 0, 44),
-		BackgroundColor3 = theme.Secondary,
-		BackgroundTransparency = theme.Transparency,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 	})
 
-	CreateInstance("UICorner", {
-		Parent = tabsFrame,
-		CornerRadius = UDim.new(0, 10),
-	})
+	if verticalTabs then
+		CreateInstance("Frame", {
+			Name = "Divider",
+			Parent = tabsFrame,
+			AnchorPoint = Vector2.new(1, 0),
+			Position = UDim2.new(1, 0, 0, 0),
+			Size = UDim2.new(0, 1, 1, 0),
+			BackgroundColor3 = theme.Accent,
+			BackgroundTransparency = 0.75,
+			BorderSizePixel = 0,
+		})
+	else
+		CreateInstance("Frame", {
+			Name = "Divider",
+			Parent = tabsFrame,
+			AnchorPoint = Vector2.new(0, 1),
+			Position = UDim2.new(0, 0, 1, 0),
+			Size = UDim2.new(1, 0, 0, 1),
+			BackgroundColor3 = theme.Accent,
+			BackgroundTransparency = 0.75,
+			BorderSizePixel = 0,
+		})
+	end
 
 	CreateInstance("UIListLayout", {
 		Parent = tabsFrame,
@@ -1371,14 +1395,8 @@ function Library:Window(config)
 		Parent = mainFrame,
 		Position = verticalTabs and UDim2.new(0, tabWidth, 0, 50) or UDim2.new(0, 0, 0, 94),
 		Size = verticalTabs and UDim2.new(1, -tabWidth, 1, -50) or UDim2.new(1, 0, 1, -94),
-		BackgroundColor3 = theme.Background,
-		BackgroundTransparency = theme.Transparency,
+		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
-	})
-
-	CreateInstance("UICorner", {
-		Parent = contentFrame,
-		CornerRadius = UDim.new(0, 10),
 	})
 
 	CreateInstance("UIPadding", {
@@ -1598,12 +1616,19 @@ function Library:SetTheme(newTheme)
 	end
 
 	self.Stroke.Color = self.Theme.Accent
-	self.TopBar.BackgroundColor3 = self.Theme.Secondary
-	self.TopBar.BackgroundTransparency = self.Theme.Transparency
-	self.TabsFrame.BackgroundColor3 = self.Theme.Secondary
-	self.TabsFrame.BackgroundTransparency = self.Theme.Transparency
-	self.ContentFrame.BackgroundColor3 = self.Theme.Background
-	self.ContentFrame.BackgroundTransparency = self.Theme.Transparency
+	self.MainFrame.BackgroundColor3 = self.Theme.Background
+	self.MainFrame.BackgroundTransparency = self.Theme.Transparency
+
+	local topDivider = self.TopBar:FindFirstChild("Divider")
+	if topDivider then
+		topDivider.BackgroundColor3 = self.Theme.Accent
+	end
+
+	local tabsDivider = self.TabsFrame:FindFirstChild("Divider")
+	if tabsDivider then
+		tabsDivider.BackgroundColor3 = self.Theme.Accent
+	end
+
 	self.TitleLabel.TextColor3 = self.Theme.TitleColor
 	self.DescLabel.TextColor3 = self.Theme.DescColor
 
