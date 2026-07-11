@@ -2050,10 +2050,10 @@ function Section:AddButton(config)
 		end
 
 		if config.Confirm then
-			self.Window:Dialog({
-				Title = config.Confirm.Title or "تأكيد",
-				Content = config.Confirm.Content or ('متأكد إنك تبي تنفذ "' .. (config.Name or "هذا الإجراء") .. '"؟'),
-				Buttons = {
+			local dialogButtons = config.Confirm.Buttons
+
+			if not dialogButtons then
+				dialogButtons = {
 					{
 						Title = config.Confirm.ConfirmText or "تأكيد",
 						Callback = runCallback,
@@ -2062,7 +2062,13 @@ function Section:AddButton(config)
 						Title = config.Confirm.CancelText or "إلغاء",
 						Callback = config.Confirm.CancelCallback,
 					},
-				},
+				}
+			end
+
+			self.Window:Dialog({
+				Title = config.Confirm.Title or "تأكيد",
+				Content = config.Confirm.Content or ('متأكد إنك تبي تنفذ "' .. (config.Name or "هذا الإجراء") .. '"؟'),
+				Buttons = dialogButtons,
 			})
 		else
 			runCallback()
@@ -2613,12 +2619,51 @@ function Section:_BuildDropdown(config, isMulti)
 	local isOpen = false
 	local function setOpen(open)
 		isOpen = open
-		optionsContainer.Visible = open
 
-		local currentTheme = self.Window.Theme
 		TweenService:Create(chevron, TweenInfo.new(0.15, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
 			Rotation = open and 180 or 0,
 		}):Play()
+
+		if open then
+			optionsContainer.Visible = true
+
+			local openEntries = {}
+			for _, opt in ipairs(optionRows) do
+				opt.Frame.BackgroundTransparency = 1
+				opt.Label.TextTransparency = 1
+				table.insert(openEntries, { instance = opt.Frame, prop = "BackgroundTransparency", target = 0 })
+				table.insert(openEntries, { instance = opt.Label, prop = "TextTransparency", target = 0 })
+
+				if opt.Check then
+					opt.Check.ImageTransparency = 1
+					table.insert(openEntries, {
+						instance = opt.Check,
+						prop = "ImageTransparency",
+						target = selectedSet[opt.Name] and 0 or 1,
+					})
+				end
+			end
+
+			FadeTransparency(openEntries, 0.15, Enum.EasingDirection.Out)
+		else
+			local closeEntries = {}
+			for _, opt in ipairs(optionRows) do
+				table.insert(closeEntries, { instance = opt.Frame, prop = "BackgroundTransparency", target = 1 })
+				table.insert(closeEntries, { instance = opt.Label, prop = "TextTransparency", target = 1 })
+
+				if opt.Check then
+					table.insert(closeEntries, { instance = opt.Check, prop = "ImageTransparency", target = 1 })
+				end
+			end
+
+			FadeTransparency(closeEntries, 0.12, Enum.EasingDirection.In)
+
+			task.delay(0.12, function()
+				if not isOpen then
+					optionsContainer.Visible = false
+				end
+			end)
+		end
 	end
 
 	header.MouseButton1Click:Connect(function()
