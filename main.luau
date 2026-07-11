@@ -1079,6 +1079,39 @@ local function CreateInstance(className, properties)
 	return inst
 end
 
+local function SquareCorner(parent, corner, color, transparency, size)
+	size = size or 10
+
+	local anchor, position
+	if corner == "TopLeft" then
+		anchor = Vector2.new(0, 0)
+		position = UDim2.new(0, 0, 0, 0)
+	elseif corner == "TopRight" then
+		anchor = Vector2.new(1, 0)
+		position = UDim2.new(1, 0, 0, 0)
+	elseif corner == "BottomLeft" then
+		anchor = Vector2.new(0, 1)
+		position = UDim2.new(0, 0, 1, 0)
+	else
+		anchor = Vector2.new(1, 1)
+		position = UDim2.new(1, 0, 1, 0)
+	end
+
+	local patch = CreateInstance("Frame", {
+		Name = "CornerPatch_" .. corner,
+		Parent = parent,
+		AnchorPoint = anchor,
+		Position = position,
+		Size = UDim2.new(0, size, 0, size),
+		BackgroundColor3 = color,
+		BackgroundTransparency = transparency,
+		BorderSizePixel = 0,
+		ZIndex = 1,
+	})
+
+	return patch
+end
+
 local function MakeDraggable(dragHandle, target)
 	local dragging = false
 	local dragStart
@@ -1288,6 +1321,17 @@ function Library:Window(config)
 		CornerRadius = UDim.new(0, 10),
 	})
 
+	local cornerPatches = {}
+
+	table.insert(cornerPatches, {
+		instance = SquareCorner(topBar, "BottomLeft", theme.Secondary, theme.Transparency),
+		colorKey = "Secondary",
+	})
+	table.insert(cornerPatches, {
+		instance = SquareCorner(topBar, "BottomRight", theme.Secondary, theme.Transparency),
+		colorKey = "Secondary",
+	})
+
 	local headerContainer = CreateInstance("Frame", {
 		Name = "Header",
 		Parent = topBar,
@@ -1349,6 +1393,38 @@ function Library:Window(config)
 		CornerRadius = UDim.new(0, 10),
 	})
 
+	if verticalTabs then
+		table.insert(cornerPatches, {
+			instance = SquareCorner(tabsFrame, "TopLeft", theme.Secondary, theme.Transparency),
+			colorKey = "Secondary",
+		})
+		table.insert(cornerPatches, {
+			instance = SquareCorner(tabsFrame, "TopRight", theme.Secondary, theme.Transparency),
+			colorKey = "Secondary",
+		})
+		table.insert(cornerPatches, {
+			instance = SquareCorner(tabsFrame, "BottomRight", theme.Secondary, theme.Transparency),
+			colorKey = "Secondary",
+		})
+	else
+		table.insert(cornerPatches, {
+			instance = SquareCorner(tabsFrame, "TopLeft", theme.Secondary, theme.Transparency),
+			colorKey = "Secondary",
+		})
+		table.insert(cornerPatches, {
+			instance = SquareCorner(tabsFrame, "TopRight", theme.Secondary, theme.Transparency),
+			colorKey = "Secondary",
+		})
+		table.insert(cornerPatches, {
+			instance = SquareCorner(tabsFrame, "BottomLeft", theme.Secondary, theme.Transparency),
+			colorKey = "Secondary",
+		})
+		table.insert(cornerPatches, {
+			instance = SquareCorner(tabsFrame, "BottomRight", theme.Secondary, theme.Transparency),
+			colorKey = "Secondary",
+		})
+	end
+
 	CreateInstance("UIListLayout", {
 		Parent = tabsFrame,
 		FillDirection = verticalTabs and Enum.FillDirection.Vertical or Enum.FillDirection.Horizontal,
@@ -1380,6 +1456,30 @@ function Library:Window(config)
 		Parent = contentFrame,
 		CornerRadius = UDim.new(0, 10),
 	})
+
+	if verticalTabs then
+		table.insert(cornerPatches, {
+			instance = SquareCorner(contentFrame, "TopLeft", theme.Background, theme.Transparency),
+			colorKey = "Background",
+		})
+		table.insert(cornerPatches, {
+			instance = SquareCorner(contentFrame, "TopRight", theme.Background, theme.Transparency),
+			colorKey = "Background",
+		})
+		table.insert(cornerPatches, {
+			instance = SquareCorner(contentFrame, "BottomLeft", theme.Background, theme.Transparency),
+			colorKey = "Background",
+		})
+	else
+		table.insert(cornerPatches, {
+			instance = SquareCorner(contentFrame, "TopLeft", theme.Background, theme.Transparency),
+			colorKey = "Background",
+		})
+		table.insert(cornerPatches, {
+			instance = SquareCorner(contentFrame, "TopRight", theme.Background, theme.Transparency),
+			colorKey = "Background",
+		})
+	end
 
 	CreateInstance("UIPadding", {
 		Parent = contentFrame,
@@ -1537,6 +1637,7 @@ function Library:Window(config)
 	self.TabsFrame = tabsFrame
 	self.ContentFrame = contentFrame
 	self.TabsVertical = verticalTabs
+	self.CornerPatches = cornerPatches
 	self.Tabs = {}
 	self.SectionLabels = {}
 	self.Controls = {}
@@ -1633,6 +1734,15 @@ function Library:SetTheme(newTheme)
 		pcall(refresh, self.Theme)
 	end
 
+	if self.CornerPatches then
+		for _, patch in ipairs(self.CornerPatches) do
+			if patch.instance and patch.instance.Parent then
+				patch.instance.BackgroundColor3 = self.Theme[patch.colorKey]
+				patch.instance.BackgroundTransparency = self.Theme.Transparency
+			end
+		end
+	end
+
 	if self.ActiveTabName then
 		self:SelectTab(self.ActiveTabName)
 	end
@@ -1660,6 +1770,7 @@ function Library:SelectTab(name)
 		local icon = button:FindFirstChildOfClass("ImageLabel")
 		local label = button:FindFirstChildOfClass("TextLabel")
 
+		button.BackgroundColor3 = self.Theme.Accent
 		button.BackgroundTransparency = active and 0.85 or 1
 
 		if icon then
