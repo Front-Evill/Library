@@ -1349,23 +1349,22 @@ function Library:Window(config)
 		BorderSizePixel = 0,
 	})
 
+	local tabsDivider
 	if verticalTabs then
-		CreateInstance("Frame", {
-			Name = "Divider",
-			Parent = tabsFrame,
-			AnchorPoint = Vector2.new(1, 0),
-			Position = UDim2.new(1, 0, 0, 0),
-			Size = UDim2.new(0, 1, 1, 0),
+		tabsDivider = CreateInstance("Frame", {
+			Name = "TabsDivider",
+			Parent = mainFrame,
+			Position = UDim2.new(0, tabWidth, 0, 50),
+			Size = UDim2.new(0, 1, 1, -50),
 			BackgroundColor3 = theme.Accent,
 			BackgroundTransparency = 0.75,
 			BorderSizePixel = 0,
 		})
 	else
-		CreateInstance("Frame", {
-			Name = "Divider",
-			Parent = tabsFrame,
-			AnchorPoint = Vector2.new(0, 1),
-			Position = UDim2.new(0, 0, 1, 0),
+		tabsDivider = CreateInstance("Frame", {
+			Name = "TabsDivider",
+			Parent = mainFrame,
+			Position = UDim2.new(0, 0, 0, 94),
 			Size = UDim2.new(1, 0, 0, 1),
 			BackgroundColor3 = theme.Accent,
 			BackgroundTransparency = 0.75,
@@ -1555,6 +1554,7 @@ function Library:Window(config)
 	self.TabsFrame = tabsFrame
 	self.ContentFrame = contentFrame
 	self.TabsVertical = verticalTabs
+	self.TabsDivider = tabsDivider
 	self.Tabs = {}
 	self.SectionLabels = {}
 	self.Controls = {}
@@ -1624,9 +1624,8 @@ function Library:SetTheme(newTheme)
 		topDivider.BackgroundColor3 = self.Theme.Accent
 	end
 
-	local tabsDivider = self.TabsFrame:FindFirstChild("Divider")
-	if tabsDivider then
-		tabsDivider.BackgroundColor3 = self.Theme.Accent
+	if self.TabsDivider then
+		self.TabsDivider.BackgroundColor3 = self.Theme.Accent
 	end
 
 	self.TitleLabel.TextColor3 = self.Theme.TitleColor
