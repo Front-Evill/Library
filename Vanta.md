@@ -11,7 +11,7 @@ and an acrylic-style translucent background effect.
 Load the latest build directly into an executor or LocalScript:
 
 ```lua
-local Library = loadstring(game:HttpGet("https://github.com/Front-Evill/Library/releases/latest/download/main.lua"))()
+local Library = loadstring(game:HttpGet("https://github.com/Front-Evill/Library/releases/download/latest/main.lua"))()
 ```
 
 This link always points to the most recently built version on the `main`
