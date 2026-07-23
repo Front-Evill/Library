@@ -26,7 +26,7 @@ build a clean script hub without writing UI code from scratch.
 The easiest way to grab the library and a ready-to-use loader script is
 through the dashboard:
 
-**[vanta-obf.netlify.app/dashboard](https://vanta-obf.netlify.app/dashboard)**
+# **[vanta-obf.netlify.app/dashboard](https://vanta-obf.netlify.app/dashboard)**
 
 Everything you need to load Vanta into your script is available there.
 
