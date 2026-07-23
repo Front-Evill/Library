@@ -46,7 +46,8 @@ Full API reference, every element's options, and code examples live in
 A complete, ready-to-run example that demonstrates every feature across
 multiple tabs is included at [`Vanta_Example.lua`](./Vanta_Example.lua).
 
-```lualocal Library = loadstring(game:HttpGet("https://github.com/Front-Evill/Library/releases/download/latest/main.lua"))()
+```lua
+local Library = loadstring(game:HttpGet("https://github.com/Front-Evill/Library/releases/download/latest/main.lua"))()
 
 local Window = Library:Window({
 	Title = "Vanta Hub",
