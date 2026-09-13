@@ -896,8 +896,8 @@ https://create.roblox.com/
 Once uploaded, use either of these forms:
 
 ```lua
-Icon = "https://www.roblox.com/asset/?id=YOUR_ASSET_ID"
-Icon = "YOUR_ASSET_ID"
+Icon = "https://www.roblox.com/asset/?id=asset id"
+Icon = "asset id"
 ```
 
 This reads every file under `src/Devlyx`, resolves the `require` calls
